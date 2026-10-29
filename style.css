@@ -40,7 +40,7 @@ body {
 }
 
 .ticketmaster-img img {
-  width: 90%;
+  width: 100%;
   border-radius: 8px;
   display: block;
 }
@@ -93,7 +93,7 @@ body {
 }
 
 .qr-area {
-  width: 130px;
+  width: 150px;
   flex-shrink: 0;
 }
 
