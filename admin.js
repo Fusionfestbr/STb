@@ -25,7 +25,7 @@ var camposTemplate = [
   { key: 'taxa',      label: 'TAXA',      placeholder: 'Ex: INTEIRA - R$380,00' },
   { key: 'secao',     label: 'SEÇÃO',     placeholder: 'Ex: CADEIRA SUPERIOR' },
   { key: 'fileira',   label: 'FILEIRA',   placeholder: 'Ex: Não numerado' },
-  { key: 'abertura',  label: 'ABERTURA',  placeholder: 'Ex: 16:00' },
+  { key: 'abertura',  label: 'ABERTURA',  placeholder: 'Ex: 14:00' },
   { key: 'inicio',    label: 'INÍCIO',    placeholder: 'Ex: 20:45' }
 ];
 
@@ -194,10 +194,10 @@ btnReset.addEventListener('click', function() {
 
 // --- Init ---
 var fallbackIngressos = [
-  { setor:"Cadeira Superior",  acesso:"Portão B", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$380,00", secao:"CADEIRA SUPERIOR",  fileira:"Não numerado", abertura:"16:00", inicio:"19:30" },
-  { setor:"Pista Premium",     acesso:"Portão B", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$800,00", secao:"PISTA PREMIUM",     fileira:"Não numerado", abertura:"16:00", inicio:"19:30" },
-  { setor:"Pista",             acesso:"Portão A", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$420,00", secao:"PISTA",             fileira:"Não numerado", abertura:"16:00", inicio:"19:30" },
-  { setor:"Cadeira Inferior",  acesso:"Portão C", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$500,00", secao:"CADEIRA INFERIOR",  fileira:"Não numerado", abertura:"16:00", inicio:"19:30" }
+  { setor:"Cadeira Superior",  acesso:"Portão B", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$380,00", secao:"CADEIRA SUPERIOR",  fileira:"Não numerado", abertura:"14:00", inicio:"19:30" },
+  { setor:"Pista Premium",     acesso:"Portão B", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$800,00", secao:"PISTA PREMIUM",     fileira:"Não numerado", abertura:"14:00", inicio:"19:30" },
+  { setor:"Pista",             acesso:"Portão A", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$420,00", secao:"PISTA",             fileira:"Não numerado", abertura:"14:00", inicio:"19:30" },
+  { setor:"Cadeira Inferior",  acesso:"Portão C", titular:"Camila Souza - 121.714.481-87", taxa:"INTEIRA - R$500,00", secao:"CADEIRA INFERIOR",  fileira:"Não numerado", abertura:"14:00", inicio:"19:30" }
 ];
 
 var dadosSalvos = carregarDados();
