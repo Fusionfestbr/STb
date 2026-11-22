@@ -1,16 +1,24 @@
-const CACHE_NAME = 'meus-ingressos-v5';
+const CACHE_NAME = 'meus-ingressos-v7';
+
+// Arquivos estáveis do app. Arquivos que não existirem são ignorados
+// individualmente (um 404 não derruba mais a instalação inteira).
 const ASSETS = [
   './',
   './index.html',
   './ingresso.html',
   './admin.html',
+  './login.html',
+  './home.css',
+  './style.css',
+  './admin.css',
+  './login.css',
   './main.css',
   './ingresso.css',
-  './admin.css',
   './main.js',
   './ingresso.js',
   './admin.js',
-  './modulepreload-polyfill.js',
+  './login.js',
+  './auth.js',
   './manifest.json',
   './assets/icon-16.png',
   './assets/icon-32.png',
@@ -20,9 +28,9 @@ const ASSETS = [
   './assets/icon-192.png',
   './assets/icon-384.png',
   './assets/icon-512.png',
-  './assets/harry.png',
+  './assets/best.png',
   './assets/quentro.png',
-  './assets/djavan.png',
+  './assets/stb.png',
   './assets/ticketmaster.png',
   './assets/qr1.png',
   './assets/qr2.png',
@@ -31,42 +39,78 @@ const ASSETS = [
   './assets/qr5.png'
 ];
 
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+      .then((cache) => Promise.allSettled(ASSETS.map((url) => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
+function isApi(url) {
+  return url.pathname.startsWith('/api/');
+}
+
+function offlineFallback() {
+  return new Response('<h1>Você está offline</h1>', {
+    status: 503,
+    statusText: 'Offline',
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Autenticação nunca passa pelo cache (evita sessão "congelada").
+  if (isApi(url)) return;
+
+  if (url.origin !== self.location.origin) return;
+
+  // Navegação: rede primeiro, cache como reserva.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           return response;
-        }
-        return fetch(event.request).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone);
-            });
+        })
+        .catch(() => caches.match(request)
+          .then((cached) => cached || caches.match('./index.html'))
+          .then((cached) => cached || offlineFallback()))
+    );
+    return;
+  }
+
+  // Estáticos: cache primeiro, atualizando em segundo plano.
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
-          return networkResponse;
-        });
-      })
-      .catch(() => caches.match('./index.html'))
+          return response;
+        })
+        .catch(() => cached || offlineFallback());
+    })
   );
 });

@@ -5,6 +5,10 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   background-color: #141f22;
   color: white;
@@ -244,4 +248,259 @@ body {
 
 .toast.show {
   opacity: 1;
+}
+
+.toast.error {
+  background: #e05555;
+  color: #fff;
+}
+
+/* ===== SESSÃO / HEADER ===== */
+
+body.auth-pending .container {
+  visibility: hidden;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-timer {
+  font-size: 11px;
+  color: #7a9a9d;
+  white-space: nowrap;
+}
+
+.session-timer.warning {
+  color: #e0b355;
+}
+
+.btn-logout {
+  border: 1px solid #2a4043;
+  background: transparent;
+  color: #9fb3b6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-logout:active,
+.btn-logout:hover {
+  background: #223335;
+  color: #fff;
+}
+
+/* ===== UPLOAD DE IMAGEM ===== */
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 2px dashed #2a4043;
+  border-radius: 10px;
+  color: #5b9a9e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.upload-btn:hover,
+.upload-btn:active {
+  border-color: #82e9d2;
+  color: #82e9d2;
+}
+
+.upload-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.upload-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #e0b355;
+  line-height: 1.4;
+}
+
+/* ===== SEGURANÇA / DISPOSITIVOS ===== */
+
+.security-card {
+  background: #1b2729;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 30px;
+}
+
+.security-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.security-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.security-hint {
+  font-size: 12px;
+  color: #7a9a9d;
+  line-height: 1.4;
+}
+
+.btn-ghost {
+  border: 1px solid #2a4043;
+  background: transparent;
+  color: #82e9d2;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-ghost:active {
+  background: rgba(130, 233, 210, 0.12);
+}
+
+.devices-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a9a9d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 16px 0 10px;
+}
+
+.devices-subtitle:first-child {
+  margin-top: 0;
+}
+
+.devices-loading,
+.devices-empty {
+  font-size: 13px;
+  color: #5b6b6e;
+  padding: 6px 0;
+}
+
+.devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.device-card {
+  background: #141f22;
+  border: 1px solid #24383b;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.device-card.current {
+  border-color: rgba(130, 233, 210, 0.5);
+}
+
+.device-card.blocked {
+  border-color: rgba(224, 85, 85, 0.35);
+}
+
+.device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.device-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.device-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.device-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #06231f;
+  background: #82e9d2;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.device-meta {
+  font-size: 11px;
+  color: #6b8285;
+  line-height: 1.35;
+}
+
+.device-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.device-action {
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.device-action.revoke {
+  color: #e0b355;
+  border-color: rgba(224, 179, 85, 0.35);
+}
+
+.device-action.block {
+  color: #ff9b9b;
+  border-color: rgba(224, 85, 85, 0.4);
+}
+
+.device-action.unblock {
+  color: #82e9d2;
+  border-color: rgba(130, 233, 210, 0.4);
+}
+
+.device-action.secondary {
+  color: #82e9d2;
+  border-color: #2a4043;
+}
+
+.device-action:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.devices-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #ff9b9b;
 }

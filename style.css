@@ -5,6 +5,10 @@ body {
   color: white;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .page {
   padding: 20px;
 }
@@ -198,4 +202,160 @@ body {
 
 .carousel::-webkit-scrollbar {
   display: none;
+}
+
+/* ===== ESTADO VAZIO ===== */
+
+.tickets-empty {
+  background: #1b2729;
+  border-radius: 12px;
+  padding: 28px 18px;
+  text-align: center;
+  font-size: 14px;
+  color: #9fb3b6;
+  line-height: 1.5;
+}
+
+.tickets-empty a {
+  display: block;
+  margin-top: 10px;
+  color: #03ddae;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ===== MODAL ===== */
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #1b2729;
+  color: #fff;
+  border-radius: 18px 18px 0 0;
+  padding: 20px 18px 26px;
+  animation: modal-up 0.25s ease;
+}
+
+@keyframes modal-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 520px) {
+  .modal {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .modal-card {
+    border-radius: 18px;
+  }
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.modal-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: #141f22;
+  color: #9fb3b6;
+  border-radius: 9px;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+.modal-group {
+  background: #141f22;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.modal-group:last-child {
+  margin-bottom: 0;
+}
+
+.modal-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #82e9d2;
+  margin-bottom: 8px;
+}
+
+.modal-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid #24383b;
+}
+
+.modal-item:last-child {
+  border-bottom: none;
+}
+
+.modal-item .mini-label {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.modal-value {
+  font-size: 14px;
+  color: #dfe9ea;
+  text-align: right;
+  word-break: break-word;
 }

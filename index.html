@@ -37,7 +37,7 @@
         <div class="icon">
           <span class="material-symbols-outlined">notifications</span>
         </div>
-        <a href="admin.html" class="icon" style="text-decoration:none">
+        <a href="admin.html" class="icon" style="text-decoration:none" aria-label="Área do administrador">
           <span class="material-symbols-outlined">person</span>
         </a>
       </div>
@@ -45,19 +45,17 @@
 
     <!-- TABS -->
     <div class="tabs">
-      <button class="tab active">Próximos</button>
-      <button class="tab">Anteriores</button>
-
+      <button class="tab active" id="tabUpcoming" type="button">Próximos</button>
+      <button class="tab" id="tabPast" type="button">Anteriores</button>
     </div>
 
     <!-- MÊS -->
-    <h2 class="month">Novembro 2026</h2>
-
+    <h2 class="month" id="monthLabel">Novembro 2026</h2>
 
     <a href="ingresso.html" class="event-card" id="eventCard">
       <div class="card-image">
-        <img src="assets/best.png" class="thumb" id="eventThumb">
-        <span class="badge">AGORA</span>
+        <img src="assets/best.png" class="thumb" id="eventThumb" alt="Imagem do evento">
+        <span class="badge" id="eventBadge">AGORA</span>
       </div>
 
       <div class="event-info">
@@ -71,30 +69,118 @@
       </div>
     </a>
 
-    <script>
-      (function () {
-        try {
-          var raw = localStorage.getItem('meus-ingressos-data');
-          if (!raw) return;
-          var dados = JSON.parse(raw);
-          var ev = dados && dados.evento;
-          if (!ev) return;
-          if (ev.thumb) document.getElementById('eventThumb').src = ev.thumb;
-          if (ev.nome) document.getElementById('eventNome').textContent = ev.nome;
-          if (ev.data) document.getElementById('eventData').textContent = ev.data;
-          if (ev.horario) document.getElementById('eventHorario').textContent = ev.horario;
-          if (ev.local) document.getElementById('eventLocal').textContent = ev.local;
-        } catch (e) { }
-      })();
-    </script>
+    <p class="empty-state" id="emptyState" hidden>
+      Nenhum evento nesta categoria.
+      <a href="admin.html">Cadastrar ingresso</a>
+    </p>
 
   </div>
 
   <script type="module">
+    const STORAGE_KEY = 'meus-ingressos-data';
+    const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+    const card = document.getElementById('eventCard');
+    const emptyState = document.getElementById('emptyState');
+    const badge = document.getElementById('eventBadge');
+    const monthLabel = document.getElementById('monthLabel');
+    const tabUpcoming = document.getElementById('tabUpcoming');
+    const tabPast = document.getElementById('tabPast');
+
+    let eventDate = null;
+
+    function parseDateBR(value) {
+      if (!value) return null;
+      const match = String(value).trim().match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+      if (!match) return null;
+
+      let year = Number(match[3]);
+      if (year < 100) year += 2000;
+
+      const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function startOfToday() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function isPast() {
+      return Boolean(eventDate) && eventDate.getTime() < startOfToday().getTime();
+    }
+
+    function isToday() {
+      if (!eventDate) return true;
+      const today = startOfToday();
+      return eventDate.getTime() === today.getTime();
+    }
+
+    function applyTab() {
+      const past = isPast();
+
+      tabUpcoming.classList.toggle('active', !past);
+      tabPast.classList.toggle('active', past);
+
+      card.hidden = past;
+      emptyState.hidden = !past;
+
+      if (past) {
+        badge.textContent = 'ENCERRADO';
+      } else if (isToday()) {
+        badge.textContent = 'AGORA';
+      } else {
+        badge.textContent = 'EM BREVE';
+      }
+    }
+
+    function load() {
+      let dados = null;
+
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) dados = JSON.parse(raw);
+      } catch (e) {}
+
+      const ev = dados && dados.evento;
+
+      if (ev) {
+        if (ev.thumb) document.getElementById('eventThumb').src = ev.thumb;
+        if (ev.nome) document.getElementById('eventNome').textContent = ev.nome;
+        if (ev.data) document.getElementById('eventData').textContent = ev.data;
+        if (ev.horario) document.getElementById('eventHorario').textContent = ev.horario;
+        if (ev.local) document.getElementById('eventLocal').textContent = ev.local;
+        eventDate = parseDateBR(ev.data);
+      }
+
+      if (eventDate) {
+        monthLabel.textContent = `${MONTHS[eventDate.getMonth()]} ${eventDate.getFullYear()}`;
+      }
+
+      applyTab();
+    }
+
+    tabUpcoming.addEventListener('click', () => {
+      tabUpcoming.classList.add('active');
+      tabPast.classList.remove('active');
+      card.hidden = isPast();
+      emptyState.hidden = !card.hidden;
+    });
+
+    tabPast.addEventListener('click', () => {
+      tabPast.classList.add('active');
+      tabUpcoming.classList.remove('active');
+      card.hidden = !isPast();
+      emptyState.hidden = !card.hidden;
+    });
+
+    load();
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('SW registrado'))
-        .catch(err => console.log('SW erro:', err));
+        .then(() => console.log('SW registrado'))
+        .catch((err) => console.log('SW erro:', err));
     }
   </script>
 

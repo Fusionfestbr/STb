@@ -29,341 +29,37 @@
 
     <!-- ===== CABEÇALHO DO EVENTO ===== -->
     <div class="event-header">
-      <a href="index.html" class="back">&lt;</a>
+      <a href="index.html" class="back" aria-label="Voltar">&lt;</a>
       <div>
-        <h1 id="ingEventoNome">Best of Blues and Rock'</h1>
-        <p id="ingEventoInfo">22/11/2026 - Auditório do Ibirapuera</p>
+        <h1 id="ingEventoNome">Meu evento</h1>
+        <p id="ingEventoInfo">—</p>
       </div>
     </div>
 
-    <!-- Script que sobrescreve o cabeçalho com dados do localStorage -->
-    <script>
-      (function () {
-        try {
-          var raw = localStorage.getItem('meus-ingressos-data');
-          if (!raw) return;
-          var dados = JSON.parse(raw);
-          var ev = dados && dados.evento;
-          if (!ev) return;
-          if (ev.nome) document.getElementById('ingEventoNome').textContent = ev.nome;
-          var info = [];
-          if (ev.data) info.push(ev.data);
-          if (ev.local) info.push(ev.local);
-          if (info.length) document.getElementById('ingEventoInfo').textContent = info.join(' - ');
-        } catch (e) { }
-      })();
-    </script>
-
     <!-- ===== CARROSSEL DE INGRESSOS ===== -->
     <div class="carousel">
-      <div class="carousel-track" id="carouselTrack">
+      <div class="carousel-track" id="carouselTrack"></div>
+    </div>
 
-
-        <!-- ╔══════════════════════════════════════╗ -->
-        <!-- ║          INGRESSO 1                  ║ -->
-        <!-- ╚══════════════════════════════════════╝ -->
-        <div class="ticket-wrapper">
-
-          <!-- Logo Ticketmaster -->
-          <div class="ticketmaster-img"><img src="assets/ticketmaster.png"></div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-
-          <!-- Frente do ingresso (QR + Setor + Acesso) -->
-          <div class="ticket-card top-card">
-            <div class="ticket-top">
-
-              <!-- QR Code -->
-              <div class="qr-area"><img src="assets/qr1.png" class="qr-img"></div>
-
-              <div class="ticket-side">
-                <!-- SETOR -->
-                <div class="side-block">
-                  <span class="mini-label">SETOR</span>
-                  <span class="sector-name">Arena Gramado</span>
-                </div>
-                <!-- ACESSO -->
-                <div class="side-block acesso">
-                  <span class="mini-label">ACESSO</span>
-                  <span class="sector-name acesso-value">Portão 03 e 10</span>
-                </div>
-                <button class="more-info-btn">Mais informação</button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Verso do ingresso (informações detalhadas) -->
-          <div class="ticket-card info-card">
-            <!-- TITULAR -->
-            <div class="info-full">
-              <span class="mini-label">TITULAR</span>
-              <span class="info-value">Camila Souza - 121.714.481-89</span>
-            </div>
-            <!-- TAXA -->
-            <div class="info-full">
-              <span class="mini-label">TAXA</span>
-              <span class="info-value">-</span>
-            </div>
-            <!-- SEÇÃO / FILEIRA -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">SEÇÃO</span>
-                <span class="info-value">ARENA GRAMADO </span>
-              </div>
-              <div>
-                <span class="mini-label">FILEIRA</span>
-                <span class="info-value">Não numerado</span>
-              </div>
-            </div>
-            <!-- ABERTURA / INICIO -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">ABERTURA</span>
-                <span class="info-value">14:00</span>
-              </div>
-              <div>
-                <span class="mini-label">INICIO</span>
-                <span class="info-value">16:00</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- FIM INGRESSO 1 -->
-
-
-        <!-- ╔══════════════════════════════════════╗ -->
-        <!-- ║          INGRESSO 2                  ║ -->
-        <!-- ╚══════════════════════════════════════╝ -->
-        <div class="ticket-wrapper">
-
-          <!-- Logo Ticketmaster -->
-          <div class="ticketmaster-img"><img src="assets/ticketmaster.png"></div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-
-          <!-- Frente do ingresso (QR + Setor + Acesso) -->
-          <div class="ticket-card top-card">
-            <div class="ticket-top">
-
-              <!-- QR Code -->
-              <div class="qr-area"><img src="assets/qr1.png" class="qr-img"></div>
-
-              <div class="ticket-side">
-                <!-- SETOR -->
-                <div class="side-block">
-                  <span class="mini-label">SETOR</span>
-                  <span class="sector-name">Arena Gramado</span>
-                </div>
-                <!-- ACESSO -->
-                <div class="side-block acesso">
-                  <span class="mini-label">ACESSO</span>
-                  <span class="sector-name acesso-value">Portão 03, 10</span>
-                </div>
-                <button class="more-info-btn">Mais informação</button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Verso do ingresso (informações detalhadas) -->
-          <div class="ticket-card info-card">
-            <!-- TITULAR -->
-            <div class="info-full">
-              <span class="mini-label">TITULAR</span>
-              <span class="info-value">Camila Guedes - 121.714.481-87</span>
-            </div>
-            <!-- TAXA -->
-            <div class="info-full">
-              <span class="mini-label">TAXA</span>
-              <span class="info-value">-</span>
-            </div>
-            <!-- SEÇÃO / FILEIRA -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">SEÇÃO</span>
-                <span class="info-value">ARENA GRAMADO</span>
-              </div>
-              <div>
-                <span class="mini-label">FILEIRA</span>
-                <span class="info-value">Não numerado</span>
-              </div>
-            </div>
-            <!-- ABERTURA / INICIO -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">ABERTURA</span>
-                <span class="info-value">14:00</span>
-              </div>
-              <div>
-                <span class="mini-label">INICIO</span>
-                <span class="info-value">16:00</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- FIM INGRESSO 2 -->
-
-
-        <!-- ╔══════════════════════════════════════╗ -->
-        <!-- ║          INGRESSO 3                  ║ -->
-        <!-- ╚══════════════════════════════════════╝ -->
-        <div class="ticket-wrapper">
-
-          <!-- Logo Ticketmaster -->
-          <div class="ticketmaster-img"><img src="assets/ticketmaster.png"></div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-
-          <!-- Frente do ingresso (QR + Setor + Acesso) -->
-          <div class="ticket-card top-card">
-            <div class="ticket-top">
-
-              <!-- QR Code -->
-              <div class="qr-area"><img src="assets/qr1.png" class="qr-img"></div>
-
-              <div class="ticket-side">
-                <!-- SETOR -->
-                <div class="side-block">
-                  <span class="mini-label">SETOR</span>
-                  <span class="sector-name">Arena Gramado</span>
-                </div>
-                <!-- ACESSO -->
-                <div class="side-block acesso">
-                  <span class="mini-label">ACESSO</span>
-                  <span class="sector-name acesso-value">Portão 03, 10</span>
-                </div>
-                <button class="more-info-btn">Mais informação</button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Verso do ingresso (informações detalhadas) -->
-          <div class="ticket-card info-card">
-            <!-- TITULAR -->
-            <div class="info-full">
-              <span class="mini-label">TITULAR</span>
-              <span class="info-value">Camila Souza - 121.714.481-87</span>
-            </div>
-            <!-- TAXA -->
-            <div class="info-full">
-              <span class="mini-label">TAXA</span>
-              <span class="info-value">-</span>
-            </div>
-            <!-- SEÇÃO / FILEIRA -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">SEÇÃO</span>
-                <span class="info-value">ARENA GRAMADO</span>
-              </div>
-              <div>
-                <span class="mini-label">FILEIRA</span>
-                <span class="info-value">Não numerado</span>
-              </div>
-            </div>
-            <!-- ABERTURA / INICIO -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">ABERTURA</span>
-                <span class="info-value">14:00</span>
-              </div>
-              <div>
-                <span class="mini-label">INICIO</span>
-                <span class="info-value">16:00</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- FIM INGRESSO 3 -->
-
-        <!-- ╔══════════════════════════════════════╗ -->
-        <!-- ║          INGRESSO 4                  ║ -->
-        <!-- ╚══════════════════════════════════════╝ -->
-        <div class="ticket-wrapper">
-
-          <!-- Logo Ticketmaster -->
-          <div class="ticketmaster-img"><img src="assets/ticketmaster.png"></div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-
-          <!-- Frente do ingresso (QR + Setor + Acesso) -->
-          <div class="ticket-card top-card">
-            <div class="ticket-top">
-
-              <!-- QR Code -->
-              <div class="qr-area"><img src="assets/qr1.png" class="qr-img"></div>
-
-              <div class="ticket-side">
-                <!-- SETOR -->
-                <div class="side-block">
-                  <span class="mini-label">SETOR</span>
-                  <span class="sector-name">Arena Gramado</span>
-                </div>
-                <!-- ACESSO -->
-                <div class="side-block acesso">
-                  <span class="mini-label">ACESSO</span>
-                  <span class="sector-name acesso-value">Portão 03 e 10</span>
-                </div>
-                <button class="more-info-btn">Mais informação</button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Verso do ingresso (informações detalhadas) -->
-          <div class="ticket-card info-card">
-            <!-- TITULAR -->
-            <div class="info-full">
-              <span class="mini-label">TITULAR</span>
-              <span class="info-value">Camila Souza - 121.714.481-87</span>
-            </div>
-            <!-- TAXA -->
-            <div class="info-full">
-              <span class="mini-label">TAXA</span>
-              <span class="info-value">-</span>
-            </div>
-            <!-- SEÇÃO / FILEIRA -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">SEÇÃO</span>
-                <span class="info-value">ARENA GRAMADO</span>
-              </div>
-              <div>
-                <span class="mini-label">FILEIRA</span>
-                <span class="info-value">Não numerado</span>
-              </div>
-            </div>
-            <!-- ABERTURA / INICIO -->
-            <div class="info-row">
-              <div>
-                <span class="mini-label">ABERTURA</span>
-                <span class="info-value">14:00</span>
-              </div>
-              <div>
-                <span class="mini-label">INICIO</span>
-                <span class="info-value">16:00</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- FIM INGRESSO 4 -->
-
-
-
-
-      </div><!-- fim carousel-track -->
-    </div><!-- fim carousel -->
+    <!-- Estado vazio -->
+    <p class="tickets-empty" id="ticketsEmpty" hidden>
+      Nenhum ingresso cadastrado ainda.
+      <a href="admin.html">Cadastrar ingressos</a>
+    </p>
 
   </div><!-- fim page -->
+
+  <!-- ===== MODAL "MAIS INFORMAÇÃO" ===== -->
+  <div class="modal" id="infoModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">Informações do ingresso</h2>
+        <button class="modal-close" type="button" data-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
 
   <script type="module" src="./script.js"></script>
 </body>

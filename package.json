@@ -1,12 +1,14 @@
 {
   "name": "meus-ingressos",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "vercel dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "hash-password": "node scripts/hash-password.mjs"
   },
   "devDependencies": {
     "vite": "^5.2.0"

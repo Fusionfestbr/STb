@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#0f2c2f">
   <meta name="description" content="Editar ingressos de eventos">
   <title>Editar Ingressos</title>
+  <meta name="robots" content="noindex, nofollow">
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/icon-16.png">
@@ -23,59 +24,60 @@
   <link rel="stylesheet" href="admin.css">
 </head>
 
-<body>
+<body class="auth-pending">
 
   <div class="container">
 
     <header class="header">
-      <a href="index.html" class="back">&lt;</a>
+      <a href="index.html" class="back" aria-label="Voltar">&lt;</a>
       <h1>Editar Ingressos</h1>
-      <div></div>
+      <div class="header-actions">
+        <span class="session-timer" id="sessionTimer" title="Tempo restante da sessão"></span>
+        <button class="btn-logout" id="btnLogout" type="button">Sair</button>
+      </div>
     </header>
 
     <!-- EVENTO -->
     <p class="section-title">Evento</p>
 
     <div class="field">
-      <label>NOME DO EVENTO</label>
+      <label for="eventoNome">NOME DO EVENTO</label>
       <input type="text" id="eventoNome" placeholder="Ex: Harry Styles: Together, Together">
     </div>
 
     <div class="row">
       <div class="field">
-        <label>DATA</label>
+        <label for="eventoData">DATA</label>
         <input type="text" id="eventoData" placeholder="Ex: 18/07/2026">
       </div>
       <div class="field">
-        <label>HORÁRIO</label>
+        <label for="eventoHorario">HORÁRIO</label>
         <input type="text" id="eventoHorario" placeholder="Ex: 20:45hs">
       </div>
     </div>
 
     <div class="field">
-      <label>LOCAL</label>
+      <label for="eventoLocal">LOCAL</label>
       <input type="text" id="eventoLocal" placeholder="Ex: MorumBis">
     </div>
 
     <div class="field">
-      <label>IMAGEM (THUMB)</label>
+      <label for="eventoThumb">IMAGEM DO EVENTO</label>
       <select id="eventoThumb">
-        <option value="assets/marromcinco.png">marromcinco.png</option>
-        <option value="assets/djavan.png">djavan.png</option>
-        <option value="assets/enhy.png">enhy.png</option>
-        <option value="assets/jonasb.png">jonasb.png</option>
-        <option value="assets/kidabelha.png">kidabelha.png</option>
-        <option value="assets/lolaini.png">lolaini.png</option>
-        <option value="assets/lollaa.png">lollaa.png</option>
-        <option value="assets/rufus.png">rufus.png</option>
-        <option value="assets/superliga.png">superliga.png</option>
-        <option value="assets/the weenknd.png">the weeknd.png</option>
-        <option value="assets/acdc.png">acdc.png</option>
-        <option value="assets/aespa.png">aespa.png</option>
-        <option value="assets/harry.png">harry.png</option>
+        <option value="assets/best.png">best.png</option>
         <option value="assets/quentro.png">quentro.png</option>
+        <option value="assets/stb.png">stb.png</option>
+        <option value="__custom">Imagem enviada do dispositivo</option>
       </select>
-      <img id="thumbPreview" src="" style="margin-top:10px;width:100%;border-radius:10px;display:none;">
+
+      <label class="upload-btn" for="eventoThumbFile">
+        Enviar imagem do dispositivo
+      </label>
+      <input type="file" id="eventoThumbFile" accept="image/*" hidden>
+
+      <img id="thumbPreview" alt="Prévia da imagem do evento"
+        style="margin-top:10px;width:100%;border-radius:10px;display:none;">
+      <p class="upload-hint" id="uploadHint" hidden></p>
     </div>
 
     <!-- INGRESSOS -->
@@ -83,17 +85,31 @@
 
     <div id="ingressos-list"></div>
 
-    <button class="btn-add" id="btnAdd">+ Adicionar ingresso</button>
+    <button class="btn-add" id="btnAdd" type="button">+ Adicionar ingresso</button>
 
-    <button class="btn-save" id="btnSave">Salvar</button>
-    <button class="btn-preview" id="btnPreview">Pré-visualizar ingresso</button>
-    <button class="btn-reset" id="btnReset">Restaurar padrão</button>
+    <button class="btn-save" id="btnSave" type="button">Salvar</button>
+    <button class="btn-preview" id="btnPreview" type="button">Pré-visualizar ingresso</button>
+    <button class="btn-reset" id="btnReset" type="button">Restaurar padrão</button>
+
+    <!-- SEGURANÇA -->
+    <p class="section-title">Segurança</p>
+
+    <div class="security-card">
+      <div class="security-head">
+        <div>
+          <p class="security-title">Dispositivos conectados</p>
+          <p class="security-hint">Sessão de 30 min renovada enquanto você usa o painel.</p>
+        </div>
+        <button class="btn-ghost" id="btnRefreshDevices" type="button">Atualizar</button>
+      </div>
+      <div class="devices-panel" id="devicesPanel"></div>
+    </div>
 
   </div>
 
   <div class="toast" id="toast">Salvo com sucesso!</div>
 
-  <script type="module" src="admin.js"></script>
+  <script type="module" src="./admin.js"></script>
 </body>
 
 </html>

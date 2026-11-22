@@ -1,5 +1,36 @@
 var STORAGE_KEY = 'meus-ingressos-data';
 
+var carousel = document.querySelector('.carousel');
+var track = document.getElementById('carouselTrack');
+var ticketsEmpty = document.getElementById('ticketsEmpty');
+var infoModal = document.getElementById('infoModal');
+var modalBody = document.getElementById('modalBody');
+
+var qrImages = [
+  'assets/qr1.png',
+  'assets/qr2.png',
+  'assets/qr3.png',
+  'assets/qr4.png',
+  'assets/qr5.png'
+];
+
+var qrIndex = 0;
+var currentIndex = 0;
+var storedData = null;
+var renderedTickets = [];
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char];
+  });
+}
+
 function carregarDados() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
@@ -8,140 +39,266 @@ function carregarDados() {
   return null;
 }
 
-function renderizarIngressos(ingressos) {
-  var track = document.getElementById('carouselTrack');
-  track.innerHTML = '';
+function totalTickets() {
+  return track.querySelectorAll('.ticket-wrapper').length;
+}
 
-  ingressos.forEach(function(ing) {
-    var w = document.createElement('div');
-    w.className = 'ticket-wrapper';
-    w.innerHTML =
-      '<div class="ticketmaster-img"><img src="assets/ticketmaster.png"></div>' +
-      '<div class="progress-container"><div class="progress-bar"></div></div>' +
-      '<div class="ticket-card top-card">' +
-        '<div class="ticket-top">' +
-          '<div class="qr-area"><img src="assets/qr1.png" class="qr-img"></div>' +
-          '<div class="ticket-side">' +
-            '<div class="side-block"><span class="mini-label">SETOR</span><span class="sector-name">' + (ing.setor || '') + '</span></div>' +
-            '<div class="side-block acesso"><span class="mini-label">ACESSO</span><span class="sector-name acesso-value">' + (ing.acesso || '') + '</span></div>' +
-            '<button class="more-info-btn">Mais informação</button>' +
-          '</div>' +
+// ---------- Cabeçalho ----------
+
+function renderEvento(evento) {
+  if (!evento) return;
+
+  var nomeEl = document.getElementById('ingEventoNome');
+  var infoEl = document.getElementById('ingEventoInfo');
+
+  if (evento.nome) nomeEl.textContent = evento.nome;
+
+  var info = [];
+  if (evento.data) info.push(evento.data);
+  if (evento.local) info.push(evento.local);
+  if (info.length) infoEl.textContent = info.join(' - ');
+}
+
+// ---------- Ingressos ----------
+
+function ticketHtml(ing, index) {
+  return (
+    '<div class="ticketmaster-img"><img src="assets/ticketmaster.png" alt="Ticketmaster"></div>' +
+    '<div class="progress-container"><div class="progress-bar"></div></div>' +
+    '<div class="ticket-card top-card">' +
+      '<div class="ticket-top">' +
+        '<div class="qr-area"><img src="' + qrImages[0] + '" class="qr-img" alt="QR Code do ingresso"></div>' +
+        '<div class="ticket-side">' +
+          '<div class="side-block"><span class="mini-label">SETOR</span><span class="sector-name">' + escapeHtml(ing.setor) + '</span></div>' +
+          '<div class="side-block acesso"><span class="mini-label">ACESSO</span><span class="sector-name acesso-value">' + escapeHtml(ing.acesso) + '</span></div>' +
+          '<button class="more-info-btn" type="button" data-index="' + index + '">Mais informação</button>' +
         '</div>' +
       '</div>' +
-      '<div class="ticket-card info-card">' +
-        '<div class="info-full"><span class="mini-label">TITULAR</span><span class="info-value">' + (ing.titular || '') + '</span></div>' +
-        '<div class="info-full"><span class="mini-label">TAXA</span><span class="info-value">' + (ing.taxa || '') + '</span></div>' +
-        '<div class="info-row"><div><span class="mini-label">SEÇÃO</span><span class="info-value">' + (ing.secao || '') + '</span></div><div><span class="mini-label">FILEIRA</span><span class="info-value">' + (ing.fileira || '') + '</span></div></div>' +
-        '<div class="info-row"><div><span class="mini-label">ABERTURA</span><span class="info-value">' + (ing.abertura || '') + '</span></div><div><span class="mini-label">INICIO</span><span class="info-value">' + (ing.inicio || '') + '</span></div></div>' +
-      '</div>';
-    track.appendChild(w);
+    '</div>' +
+    '<div class="ticket-card info-card">' +
+      '<div class="info-full"><span class="mini-label">TITULAR</span><span class="info-value">' + escapeHtml(ing.titular) + '</span></div>' +
+      '<div class="info-full"><span class="mini-label">TAXA</span><span class="info-value">' + escapeHtml(ing.taxa) + '</span></div>' +
+      '<div class="info-row">' +
+        '<div><span class="mini-label">SEÇÃO</span><span class="info-value">' + escapeHtml(ing.secao) + '</span></div>' +
+        '<div><span class="mini-label">FILEIRA</span><span class="info-value">' + escapeHtml(ing.fileira) + '</span></div>' +
+      '</div>' +
+      '<div class="info-row">' +
+        '<div><span class="mini-label">ABERTURA</span><span class="info-value">' + escapeHtml(ing.abertura) + '</span></div>' +
+        '<div><span class="mini-label">INICIO</span><span class="info-value">' + escapeHtml(ing.inicio) + '</span></div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function renderizarIngressos(ingressos) {
+  track.innerHTML = '';
+  currentIndex = 0;
+  moveCarousel();
+
+  ingressos.forEach(function (ing, index) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'ticket-wrapper';
+    wrapper.dataset.index = String(index);
+    wrapper.innerHTML = ticketHtml(ing, index);
+    track.appendChild(wrapper);
   });
+
+  var empty = ingressos.length === 0;
+  track.parentElement.hidden = empty;
+  ticketsEmpty.hidden = !empty;
+
+  if (!empty) moveCarousel();
 }
 
-var dadosSalvos = carregarDados();
-if (dadosSalvos && dadosSalvos.ingressos && dadosSalvos.ingressos.length > 0) {
-  renderizarIngressos(dadosSalvos.ingressos);
+// ---------- Modal ----------
+
+function addModalRow(parent, label, value) {
+  var item = document.createElement('div');
+  item.className = 'modal-item';
+
+  var labelEl = document.createElement('span');
+  labelEl.className = 'mini-label';
+  labelEl.textContent = label;
+
+  var valueEl = document.createElement('span');
+  valueEl.className = 'modal-value';
+  valueEl.textContent = value || '—';
+
+  item.appendChild(labelEl);
+  item.appendChild(valueEl);
+  parent.appendChild(item);
 }
 
+function openModal(index) {
+  var ing = renderedTickets[index];
+  if (!ing) return;
 
-var qrImages = [
-  "assets/qr1.png",
-  "assets/qr2.png",
-  "assets/qr3.png",
-  "assets/qr4.png",
-  "assets/qr5.png"
-];
+  var evento = (storedData && storedData.evento) || {};
 
-var qrIndex = 0;
+  modalBody.innerHTML = '';
 
-function updateQR(){
+  var groupEvent = document.createElement('div');
+  groupEvent.className = 'modal-group';
+  var eventTitle = document.createElement('h3');
+  eventTitle.className = 'modal-group-title';
+  eventTitle.textContent = 'Evento';
+  groupEvent.appendChild(eventTitle);
+  addModalRow(groupEvent, 'EVENTO', evento.nome);
+  addModalRow(groupEvent, 'LOCAL', evento.local);
+  addModalRow(groupEvent, 'DATA', evento.data);
+  addModalRow(groupEvent, 'HORÁRIO', evento.horario);
+  modalBody.appendChild(groupEvent);
+
+  var groupTicket = document.createElement('div');
+  groupTicket.className = 'modal-group';
+  var ticketTitle = document.createElement('h3');
+  ticketTitle.className = 'modal-group-title';
+  ticketTitle.textContent = 'Ingresso ' + (index + 1);
+  groupTicket.appendChild(ticketTitle);
+  addModalRow(groupTicket, 'TITULAR', ing.titular);
+  addModalRow(groupTicket, 'SETOR', ing.setor);
+  addModalRow(groupTicket, 'ACESSO', ing.acesso);
+  addModalRow(groupTicket, 'SEÇÃO', ing.secao);
+  addModalRow(groupTicket, 'FILEIRA', ing.fileira);
+  addModalRow(groupTicket, 'ABERTURA', ing.abertura);
+  addModalRow(groupTicket, 'INÍCIO', ing.inicio);
+  addModalRow(groupTicket, 'TAXA', ing.taxa);
+  modalBody.appendChild(groupTicket);
+
+  infoModal.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
+function closeModal() {
+  infoModal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+// ---------- QR rotativo ----------
+
+function updateQR() {
   qrIndex = (qrIndex + 1) % qrImages.length;
 
-  document.querySelectorAll(".qr-img").forEach(function(img) {
+  document.querySelectorAll('.qr-img').forEach(function (img) {
     img.src = qrImages[qrIndex];
   });
 
-  document.querySelectorAll(".progress-bar").forEach(function(bar) {
-    bar.style.animation = "none";
+  document.querySelectorAll('.progress-bar').forEach(function (bar) {
+    bar.style.animation = 'none';
     void bar.getBoundingClientRect();
-    requestAnimationFrame(function() {
-      bar.style.animation = "";
+    requestAnimationFrame(function () {
+      bar.style.animation = '';
     });
   });
 }
 
-setInterval(updateQR, 20000);
-
-
-var carousel  = document.querySelector('.carousel');
-var track     = document.querySelector('.carousel-track');
-// ✅ Lido APÓS o render para garantir a contagem correta de ingressos
-var total     = document.querySelectorAll('.ticket-wrapper').length;
-var currentIndex = 0;
+// ---------- Carrossel ----------
 
 function moveCarousel() {
+  var total = totalTickets();
+  if (total === 0) return;
+
+  currentIndex = Math.max(0, Math.min(currentIndex, total - 1));
   var slideWidth = carousel.offsetWidth;
-  track.style.transform = "translateX(" + (-currentIndex * slideWidth) + "px)";
+  track.style.transform = 'translateX(' + (-currentIndex * slideWidth) + 'px)';
 }
 
-var pointerStartX  = 0;
-var pointerStartY  = 0;
-var isPointerDown  = false;
-var isHorizontal   = null;
+var pointerStartX = 0;
+var pointerStartY = 0;
+var isPointerDown = false;
+var isHorizontal = null;
 
-track.addEventListener('pointerdown', function(e) {
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
+function bindCarousel() {
+  track.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-  pointerStartX = e.clientX;
-  pointerStartY = e.clientY;
-  isPointerDown = true;
-  isHorizontal  = null;
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+    isPointerDown = true;
+    isHorizontal = null;
 
-  track.setPointerCapture(e.pointerId);
-}, { passive: true });
+    track.setPointerCapture(e.pointerId);
+  }, { passive: true });
 
-track.addEventListener('pointermove', function(e) {
-  if (!isPointerDown) return;
+  track.addEventListener('pointermove', function (e) {
+    if (!isPointerDown) return;
 
-  var diffX = e.clientX - pointerStartX;
-  var diffY = e.clientY - pointerStartY;
+    var diffX = e.clientX - pointerStartX;
+    var diffY = e.clientY - pointerStartY;
 
-  if (isHorizontal === null) {
-    if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
-      isHorizontal = Math.abs(diffX) >= Math.abs(diffY);
+    if (isHorizontal === null) {
+      if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+        isHorizontal = Math.abs(diffX) >= Math.abs(diffY);
+      }
     }
-  }
 
-  if (isHorizontal === true) {
-    e.preventDefault();
-  }
-}, { passive: false });
+    if (isHorizontal === true) e.preventDefault();
+  }, { passive: false });
 
-track.addEventListener('pointerup', function(e) {
-  if (!isPointerDown) return;
-  isPointerDown = false;
+  track.addEventListener('pointerup', function (e) {
+    if (!isPointerDown) return;
+    isPointerDown = false;
 
-  var diffX = e.clientX - pointerStartX;
+    var diffX = e.clientX - pointerStartX;
+    var total = totalTickets();
 
-  if (isHorizontal === true && Math.abs(diffX) > 40) {
-    if (diffX < 0) {
-      currentIndex = Math.min(currentIndex + 1, total - 1);
-    } else {
-      currentIndex = Math.max(currentIndex - 1, 0);
+    if (isHorizontal === true && Math.abs(diffX) > 40) {
+      if (diffX < 0) {
+        currentIndex = Math.min(currentIndex + 1, total - 1);
+      } else {
+        currentIndex = Math.max(currentIndex - 1, 0);
+      }
+      moveCarousel();
     }
-    moveCarousel();
-  }
 
-  isHorizontal = null;
-}, { passive: true });
+    isHorizontal = null;
+  }, { passive: true });
 
-track.addEventListener('pointercancel', function() {
-  isPointerDown = false;
-  isHorizontal  = null;
+  track.addEventListener('pointercancel', function () {
+    isPointerDown = false;
+    isHorizontal = null;
+  });
+
+  window.addEventListener('resize', moveCarousel);
+}
+
+// ---------- Init ----------
+
+storedData = carregarDados();
+
+if (storedData) {
+  renderEvento(storedData.evento);
+}
+
+if (storedData && storedData.ingressos && storedData.ingressos.length > 0) {
+  renderedTickets = storedData.ingressos;
+  renderizarIngressos(renderedTickets);
+} else {
+  renderizarIngressos([]);
+}
+
+bindCarousel();
+setInterval(updateQR, 20000);
+
+track.addEventListener('click', function (e) {
+  var button = e.target.closest('.more-info-btn');
+  if (!button) return;
+
+  var wrapper = button.closest('.ticket-wrapper');
+  var index = wrapper ? Number(wrapper.dataset.index) : 0;
+  openModal(index);
+});
+
+infoModal.addEventListener('click', function (e) {
+  if (e.target.hasAttribute('data-close') || e.target.closest('[data-close]')) closeModal();
+});
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !infoModal.hidden) closeModal();
 });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js')
-    .then(function() { console.log('SW registrado'); })
-    .catch(function(err) { console.log('SW erro:', err); });
+    .then(function () { console.log('SW registrado'); })
+    .catch(function (err) { console.log('SW erro:', err); });
 }
