@@ -1,11 +1,11 @@
 import { requireMethod, sendJson } from '../../server/http.js';
-import { requireSession } from '../../server/auth.js';
+import { requireAdmin } from '../../server/auth.js';
 import { listBlockedDevices, listSessions } from '../../server/devices.js';
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, 'GET')) return;
 
-  const current = await requireSession(req, res);
+  const current = await requireAdmin(req, res);
   if (!current) return;
 
   const sessions = await listSessions();

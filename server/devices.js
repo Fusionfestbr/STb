@@ -8,6 +8,7 @@ function sanitize(session) {
     id: session.id,
     deviceId: session.deviceId,
     deviceLabel: session.deviceLabel,
+    role: session.role === 'guest' ? 'guest' : 'admin',
     ip: session.ip,
     ua: session.ua,
     createdAt: session.createdAt,

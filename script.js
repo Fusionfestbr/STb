@@ -1,4 +1,4 @@
-var STORAGE_KEY = 'meus-ingressos-data';
+import { resolveData } from './defaults.js';
 
 var carousel = document.querySelector('.carousel');
 var track = document.getElementById('carouselTrack');
@@ -29,14 +29,6 @@ function escapeHtml(value) {
       "'": '&#39;'
     }[char];
   });
-}
-
-function carregarDados() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return null;
 }
 
 function totalTickets() {
@@ -264,18 +256,11 @@ function bindCarousel() {
 
 // ---------- Init ----------
 
-storedData = carregarDados();
+storedData = resolveData().data;
 
-if (storedData) {
-  renderEvento(storedData.evento);
-}
-
-if (storedData && storedData.ingressos && storedData.ingressos.length > 0) {
-  renderedTickets = storedData.ingressos;
-  renderizarIngressos(renderedTickets);
-} else {
-  renderizarIngressos([]);
-}
+renderEvento(storedData.evento);
+renderedTickets = storedData.ingressos;
+renderizarIngressos(renderedTickets);
 
 bindCarousel();
 setInterval(updateQR, 20000);

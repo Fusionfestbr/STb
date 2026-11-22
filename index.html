@@ -77,7 +77,8 @@
   </div>
 
   <script type="module">
-    const STORAGE_KEY = 'meus-ingressos-data';
+    import { resolveData } from './defaults.js';
+
     const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -136,23 +137,15 @@
     }
 
     function load() {
-      let dados = null;
+      const { data } = resolveData();
+      const ev = data.evento;
 
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) dados = JSON.parse(raw);
-      } catch (e) {}
-
-      const ev = dados && dados.evento;
-
-      if (ev) {
-        if (ev.thumb) document.getElementById('eventThumb').src = ev.thumb;
-        if (ev.nome) document.getElementById('eventNome').textContent = ev.nome;
-        if (ev.data) document.getElementById('eventData').textContent = ev.data;
-        if (ev.horario) document.getElementById('eventHorario').textContent = ev.horario;
-        if (ev.local) document.getElementById('eventLocal').textContent = ev.local;
-        eventDate = parseDateBR(ev.data);
-      }
+      document.getElementById('eventThumb').src = ev.thumb;
+      document.getElementById('eventNome').textContent = ev.nome;
+      document.getElementById('eventData').textContent = ev.data;
+      document.getElementById('eventHorario').textContent = ev.horario;
+      document.getElementById('eventLocal').textContent = ev.local;
+      eventDate = parseDateBR(ev.data);
 
       if (eventDate) {
         monthLabel.textContent = `${MONTHS[eventDate.getMonth()]} ${eventDate.getFullYear()}`;

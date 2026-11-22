@@ -277,6 +277,30 @@ body.auth-pending .container {
   color: #e0b355;
 }
 
+.role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid #2a4043;
+  color: #9fb3b6;
+  white-space: nowrap;
+}
+
+.role-badge.admin {
+  color: #e8c884;
+  border-color: rgba(224, 179, 85, 0.45);
+  background: rgba(224, 179, 85, 0.1);
+}
+
+.role-badge.guest {
+  color: #9fc7cb;
+  border-color: rgba(122, 190, 198, 0.4);
+  background: rgba(122, 190, 198, 0.1);
+}
+
 .btn-logout {
   border: 1px solid #2a4043;
   background: transparent;
@@ -450,6 +474,14 @@ body.auth-pending .container {
   border-radius: 6px;
 }
 
+.device-badge.admin {
+  background: #e8c884;
+}
+
+.device-badge.guest {
+  background: #9fc7cb;
+}
+
 .device-meta {
   font-size: 11px;
   color: #6b8285;
@@ -503,4 +535,53 @@ body.auth-pending .container {
   gap: 10px;
   font-size: 13px;
   color: #ff9b9b;
+}
+
+/* ===== AVISO DE DADOS DE EXEMPLO ===== */
+
+.data-notice {
+  background: rgba(224, 179, 85, 0.12);
+  border: 1px solid rgba(224, 179, 85, 0.35);
+  color: #e8c884;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.data-notice strong {
+  color: #ffe0a3;
+}
+
+/* ===== BACKUP ===== */
+
+.backup-card {
+  background: #1b2729;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 30px;
+}
+
+.backup-hint {
+  font-size: 12px;
+  color: #7a9a9d;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup-actions .btn-ghost {
+  flex: 1 1 auto;
+}
+
+.backup-actions label.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }

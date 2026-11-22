@@ -62,7 +62,7 @@ function sessionKey(token) {
   return SESSION_PREFIX + sha256(token);
 }
 
-export async function createSession({ deviceId, deviceLabel, ip, ua }) {
+export async function createSession({ deviceId, deviceLabel, ip, ua, role = 'admin' }) {
   const token = b64(crypto.randomBytes(32));
   const key = sessionKey(token);
   const now = Date.now();
@@ -73,6 +73,7 @@ export async function createSession({ deviceId, deviceLabel, ip, ua }) {
     id: crypto.randomUUID(),
     deviceId,
     deviceLabel,
+    role: role === 'guest' ? 'guest' : 'admin',
     ip,
     ua: String(ua || '').slice(0, 400),
     createdAt: now,
@@ -122,6 +123,11 @@ export async function getSession(req) {
     return null;
   }
 
+  // Sessões criadas antes da separação de papéis são tratadas como admin.
+  if (session.role !== 'guest' && session.role !== 'admin') {
+    session.role = 'admin';
+  }
+
   const now = Date.now();
   if (now >= session.expiresAt || now >= session.absoluteExpiresAt) {
     await destroySession(token);
@@ -158,5 +164,21 @@ export async function requireSession(req, res) {
     res.end(JSON.stringify({ error: 'unauthorized', valid: false }));
     return null;
   }
+  return result;
+}
+
+// Exige uma sessão de administrador. Convidados recebem 403.
+export async function requireAdmin(req, res) {
+  const result = await requireSession(req, res);
+  if (!result) return null;
+
+  if (result.session.role !== 'admin') {
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.end(JSON.stringify({ error: 'forbidden', valid: true, role: result.session.role }));
+    return null;
+  }
+
   return result;
 }

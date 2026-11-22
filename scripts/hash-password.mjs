@@ -1,4 +1,4 @@
-// Gera o hash da senha do admin para a variável ADMIN_PASSWORD_HASH.
+// Gera o hash de uma senha (ADMIN_PASSWORD_HASH ou GUEST_PASSWORD_HASH).
 // Uso: node scripts/hash-password.mjs "sua-senha"
 // ou:  node scripts/hash-password.mjs   (pergunta a senha sem exibir)
 
@@ -36,16 +36,21 @@ const argPassword = process.argv[2];
 
 let password = argPassword;
 if (!password) {
-  password = await askHidden('Senha do admin: ');
+  password = await askHidden('Senha: ');
 }
 
-if (!password || password.length < 6) {
-  console.error('A senha precisa ter pelo menos 6 caracteres.');
+if (!password || password.length < 5) {
+  console.error('A senha precisa ter pelo menos 5 caracteres.');
   process.exit(1);
+}
+
+if (password.length < 8) {
+  console.warn('Aviso: senha curta (menos de 8 caracteres). Use apenas se souber o risco.');
 }
 
 const hash = hashPassword(password);
 
-console.log('\nADMIN_PASSWORD_HASH=');
-console.log(hash);
-console.log('\nCole o valor acima nas variáveis de ambiente da Vercel (e no .env.local).');
+console.log('\nCole o hash na variável correspondente:');
+console.log('  ADMIN_PASSWORD_HASH (admin)  ou  GUEST_PASSWORD_HASH (convidado)');
+console.log('\n' + hash + '\n');
+console.log('Depois adicione/atualize a variável na Vercel e faça um novo deploy.');

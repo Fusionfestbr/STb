@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
   return sendJson(res, 200, {
     valid: true,
+    role: current.session.role,
     device: {
       deviceId: current.session.deviceId,
       deviceLabel: current.session.deviceLabel,

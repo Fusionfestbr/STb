@@ -1,12 +1,12 @@
 import { assertSameOrigin, readJson, requireMethod, sendJson } from '../../server/http.js';
-import { requireSession } from '../../server/auth.js';
+import { requireAdmin } from '../../server/auth.js';
 import { blockDevice } from '../../server/devices.js';
 
 export default async function handler(req, res) {
   if (!requireMethod(req, res, 'POST')) return;
   if (!assertSameOrigin(req, res)) return;
 
-  const current = await requireSession(req, res);
+  const current = await requireAdmin(req, res);
   if (!current) return;
 
   const body = await readJson(req);

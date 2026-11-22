@@ -46,6 +46,8 @@ function renderActive(active, handlers) {
     const title = el('div', 'device-title');
     title.appendChild(el('span', 'device-name', session.deviceLabel || 'Dispositivo'));
     if (session.isCurrent) title.appendChild(el('span', 'device-badge', 'Este dispositivo'));
+    if (session.role === 'guest') title.appendChild(el('span', 'device-badge guest', 'Convidado'));
+    else title.appendChild(el('span', 'device-badge admin', 'Admin'));
     info.appendChild(title);
     info.appendChild(el('span', 'device-meta', `IP ${session.ip || '—'} · último acesso ${formatDate(session.lastSeenAt)}`));
     info.appendChild(el('span', 'device-meta', `Sessão criada ${formatDate(session.createdAt)} · expira ${formatDate(session.expiresAt)}`));

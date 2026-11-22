@@ -5,8 +5,14 @@ import {
   requireSession
 } from './auth.js';
 import { initDevices } from './admin-devices.js';
+import {
+  resolveData,
+  saveData,
+  restoreDefaults,
+  restoreBackup,
+  hasBackup
+} from './defaults.js';
 
-var STORAGE_KEY = 'meus-ingressos-data';
 var CUSTOM_THUMB_VALUE = '__custom';
 
 var ingressosList = document.getElementById('ingressos-list');
@@ -25,6 +31,13 @@ var eventoThumbFile = document.getElementById('eventoThumbFile');
 var thumbPreview = document.getElementById('thumbPreview');
 var uploadHint = document.getElementById('uploadHint');
 var sessionTimer = document.getElementById('sessionTimer');
+var roleBadge = document.getElementById('roleBadge');
+var securityTitle = document.getElementById('securityTitle');
+var securityCard = document.getElementById('securityCard');
+var dataNotice = document.getElementById('dataNotice');
+var btnExport = document.getElementById('btnExport');
+var importFile = document.getElementById('importFile');
+var btnRestoreBackup = document.getElementById('btnRestoreBackup');
 
 var customThumb = null;
 
@@ -37,13 +50,6 @@ var camposTemplate = [
   { key: 'fileira', label: 'FILEIRA', placeholder: 'Ex: Não numerado' },
   { key: 'abertura', label: 'ABERTURA', placeholder: 'Ex: 14:00' },
   { key: 'inicio', label: 'INÍCIO', placeholder: 'Ex: 20:45' }
-];
-
-var fallbackIngressos = [
-  { setor: 'Cadeira Superior', acesso: 'Portão B', titular: 'Camila Souza - 121.714.481-87', taxa: 'INTEIRA - R$380,00', secao: 'CADEIRA SUPERIOR', fileira: 'Não numerado', abertura: '14:00', inicio: '19:30' },
-  { setor: 'Pista Premium', acesso: 'Portão B', titular: 'Camila Souza - 121.714.481-87', taxa: 'INTEIRA - R$800,00', secao: 'PISTA PREMIUM', fileira: 'Não numerado', abertura: '14:00', inicio: '19:30' },
-  { setor: 'Pista', acesso: 'Portão A', titular: 'Camila Souza - 121.714.481-87', taxa: 'INTEIRA - R$420,00', secao: 'PISTA', fileira: 'Não numerado', abertura: '14:00', inicio: '19:30' },
-  { setor: 'Cadeira Inferior', acesso: 'Portão C', titular: 'Camila Souza - 121.714.481-87', taxa: 'INTEIRA - R$500,00', secao: 'CADEIRA INFERIOR', fileira: 'Não numerado', abertura: '14:00', inicio: '19:30' }
 ];
 
 // ---------- Imagem ----------
@@ -213,16 +219,6 @@ function renumerar() {
   });
 }
 
-function carregarDados() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
-}
-
 function adicionarIngresso(dados) {
   var index = ingressosList.querySelectorAll('.ingresso-card').length;
   var card = criarCardIngresso(dados || {}, index);
@@ -273,7 +269,7 @@ function salvar() {
   });
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+    saveData(dados);
   } catch (error) {
     showToast('Armazenamento cheio. Use uma imagem menor.', true);
     return false;
@@ -281,6 +277,46 @@ function salvar() {
 
   showToast('Salvo com sucesso!', false);
   return true;
+}
+
+// ---------- Backup ----------
+
+function exportarDados() {
+  var dados = resolveData().data;
+  var blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  var stamp = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = 'meus-ingressos-' + stamp + '.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  showToast('Backup exportado!', false);
+}
+
+async function importarDados(file) {
+  try {
+    var text = await file.text();
+    var parsed = JSON.parse(text);
+
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ingressos)) {
+      throw new Error('formato_invalido');
+    }
+
+    saveData({
+      evento: parsed.evento && typeof parsed.evento === 'object' ? parsed.evento : {},
+      ingressos: parsed.ingressos
+    });
+
+    showToast('Backup importado!', false);
+    setTimeout(function () { window.location.reload(); }, 700);
+  } catch (error) {
+    showToast('Arquivo inválido. Use um JSON exportado pelo app.', true);
+  }
 }
 
 // ---------- Sessão ----------
@@ -293,6 +329,20 @@ function updateTimer(expiresAt) {
 
 function setupSession(session) {
   updateTimer(session.expiresAt);
+
+  var isAdmin = session.role !== 'guest';
+
+  if (roleBadge) {
+    roleBadge.hidden = false;
+    roleBadge.textContent = isAdmin ? 'Admin' : 'Convidado';
+    roleBadge.classList.toggle('admin', isAdmin);
+    roleBadge.classList.toggle('guest', !isAdmin);
+  }
+
+  if (!isAdmin) {
+    if (securityTitle) securityTitle.hidden = true;
+    if (securityCard) securityCard.hidden = true;
+  }
 
   createSessionWatcher(session, {
     onUpdate: function (state) {
@@ -332,8 +382,13 @@ async function init() {
   });
 
   btnReset.addEventListener('click', function () {
-    if (!window.confirm('Apagar todos os dados salvos e restaurar o padrão?')) return;
-    localStorage.removeItem(STORAGE_KEY);
+    if (!window.confirm('Restaurar os ingressos de exemplo? O estado atual será guardado no backup.')) return;
+    try {
+      restoreDefaults();
+    } catch (error) {
+      showToast('Não foi possível restaurar agora.', true);
+      return;
+    }
     window.location.reload();
   });
 
@@ -341,38 +396,64 @@ async function init() {
     logout();
   });
 
-  var dadosSalvos = carregarDados();
-  var lista = (dadosSalvos && dadosSalvos.ingressos && dadosSalvos.ingressos.length > 0)
-    ? dadosSalvos.ingressos
-    : fallbackIngressos;
+  if (btnExport) {
+    btnExport.addEventListener('click', exportarDados);
+  }
 
-  preencherFormulario({ ingressos: lista });
-
-  if (dadosSalvos && dadosSalvos.evento) {
-    var ev = dadosSalvos.evento;
-    if (ev.nome) eventoNome.value = ev.nome;
-    if (ev.data) eventoData.value = ev.data;
-    if (ev.horario) eventoHorario.value = ev.horario;
-    if (ev.local) eventoLocal.value = ev.local;
-
-    if (ev.thumb) {
-      if (ev.thumb.indexOf('data:') === 0) {
-        customThumb = ev.thumb;
-        eventoThumb.value = CUSTOM_THUMB_VALUE;
-        setPreview(ev.thumb);
-      } else {
-        var hasOption = Array.prototype.some.call(eventoThumb.options, function (option) {
-          return option.value === ev.thumb;
-        });
-        eventoThumb.value = hasOption ? ev.thumb : 'assets/best.png';
-        setPreview(eventoThumb.value);
+  if (btnRestoreBackup) {
+    btnRestoreBackup.addEventListener('click', function () {
+      if (!hasBackup()) {
+        showToast('Nenhum backup disponível ainda.', true);
+        return;
       }
+      if (!window.confirm('Restaurar o último backup? Os dados atuais serão substituídos.')) return;
+
+      if (restoreBackup()) {
+        showToast('Backup restaurado!', false);
+        setTimeout(function () { window.location.reload(); }, 700);
+      } else {
+        showToast('Não foi possível restaurar o backup.', true);
+      }
+    });
+  }
+
+  if (importFile) {
+    importFile.addEventListener('change', function () {
+      var file = importFile.files && importFile.files[0];
+      if (file) importarDados(file);
+      importFile.value = '';
+    });
+  }
+
+  var resolved = resolveData();
+  var dados = resolved.data;
+
+  preencherFormulario({ ingressos: dados.ingressos });
+
+  if (dataNotice) dataNotice.hidden = !resolved.isFallback;
+
+  eventoNome.value = dados.evento.nome || '';
+  eventoData.value = dados.evento.data || '';
+  eventoHorario.value = dados.evento.horario || '';
+  eventoLocal.value = dados.evento.local || '';
+
+  if (dados.evento.thumb) {
+    if (dados.evento.thumb.indexOf('data:') === 0) {
+      customThumb = dados.evento.thumb;
+      eventoThumb.value = CUSTOM_THUMB_VALUE;
+      setPreview(dados.evento.thumb);
+    } else {
+      var hasOption = Array.prototype.some.call(eventoThumb.options, function (option) {
+        return option.value === dados.evento.thumb;
+      });
+      eventoThumb.value = hasOption ? dados.evento.thumb : 'assets/best.png';
+      setPreview(eventoThumb.value);
     }
   } else {
     setPreview(eventoThumb.value);
   }
 
-  initDevices();
+  if (session.role !== 'guest') initDevices();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')

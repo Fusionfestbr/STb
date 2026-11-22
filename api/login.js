@@ -50,21 +50,32 @@ export default async function handler(req, res) {
     return sendJson(res, 403, { error: 'device_blocked' });
   }
 
-  const storedHash = process.env.ADMIN_PASSWORD_HASH;
-  if (!storedHash) {
+  const adminHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!adminHash) {
     console.error('[login] ADMIN_PASSWORD_HASH não configurado.');
     return sendJson(res, 500, { error: 'server_not_configured' });
   }
 
-  if (!verifyPassword(password, storedHash)) {
+  let role = null;
+  if (verifyPassword(password, adminHash)) {
+    role = 'admin';
+  } else {
+    const guestHash = process.env.GUEST_PASSWORD_HASH;
+    if (guestHash && verifyPassword(password, guestHash)) {
+      role = 'guest';
+    }
+  }
+
+  if (!role) {
     return sendJson(res, 401, { error: 'invalid_credentials' });
   }
 
-  const { token, session } = await createSession({ deviceId, deviceLabel, ip, ua });
+  const { token, session } = await createSession({ deviceId, deviceLabel, ip, ua, role });
   setSessionCookie(res, token);
 
   return sendJson(res, 200, {
     ok: true,
+    role: session.role,
     device: {
       deviceId: session.deviceId,
       deviceLabel: session.deviceLabel

@@ -19,6 +19,8 @@ const ASSETS = [
   './admin.js',
   './login.js',
   './auth.js',
+  './admin-devices.js',
+  './defaults.js',
   './manifest.json',
   './assets/icon-16.png',
   './assets/icon-32.png',
