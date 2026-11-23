@@ -1,4 +1,4 @@
-import { createSessionWatcher, requireSession, logout } from './auth.js';
+import { createSessionWatcher, requireSession } from './auth.js';
 import { resolveData } from './defaults.js';
 
 // Se o navegador restaurar a página do cache (botão voltar), valida de novo.
@@ -192,19 +192,31 @@ function updateQR() {
 
 // ---------- Carrossel ----------
 
+// Largura real de um slide. Medir o slide evita erro quando o conteúdo
+// muda de tamanho (fonte, orientação, texto maior do sistema).
+function slideWidth() {
+  var first = track.querySelector('.ticket-wrapper');
+  if (first) {
+    var width = first.getBoundingClientRect().width;
+    if (width > 0) return width;
+  }
+  return carousel.clientWidth || carousel.offsetWidth || 0;
+}
+
 function moveCarousel() {
   var total = totalTickets();
   if (total === 0) return;
 
   currentIndex = Math.max(0, Math.min(currentIndex, total - 1));
-  var slideWidth = carousel.offsetWidth;
-  track.style.transform = 'translateX(' + (-currentIndex * slideWidth) + 'px)';
+  var width = slideWidth();
+  track.style.transform = 'translate3d(' + (-currentIndex * width) + 'px, 0, 0)';
 }
 
 var pointerStartX = 0;
 var pointerStartY = 0;
 var isPointerDown = false;
 var isHorizontal = null;
+var suppressClick = false;
 
 function bindCarousel() {
   track.addEventListener('pointerdown', function (e) {
@@ -215,7 +227,9 @@ function bindCarousel() {
     isPointerDown = true;
     isHorizontal = null;
 
-    track.setPointerCapture(e.pointerId);
+    try {
+      track.setPointerCapture(e.pointerId);
+    } catch (err) {}
   }, { passive: true });
 
   track.addEventListener('pointermove', function (e) {
@@ -237,10 +251,18 @@ function bindCarousel() {
     if (!isPointerDown) return;
     isPointerDown = false;
 
+    try {
+      track.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+
     var diffX = e.clientX - pointerStartX;
     var total = totalTickets();
 
     if (isHorizontal === true && Math.abs(diffX) > 40) {
+      // Um swipe não deve abrir o modal do botão que estava sob o dedo.
+      suppressClick = true;
+      window.setTimeout(function () { suppressClick = false; }, 350);
+
       if (diffX < 0) {
         currentIndex = Math.min(currentIndex + 1, total - 1);
       } else {
@@ -252,12 +274,23 @@ function bindCarousel() {
     isHorizontal = null;
   }, { passive: true });
 
-  track.addEventListener('pointercancel', function () {
+  track.addEventListener('pointercancel', function (e) {
     isPointerDown = false;
     isHorizontal = null;
+    try {
+      track.releasePointerCapture(e.pointerId);
+    } catch (err) {}
   });
 
   window.addEventListener('resize', moveCarousel);
+  window.addEventListener('orientationchange', function () {
+    window.setTimeout(moveCarousel, 250);
+  });
+  window.addEventListener('load', moveCarousel);
+
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(function () { moveCarousel(); }).observe(carousel);
+  }
 }
 
 // ---------- Init ----------
@@ -279,11 +312,6 @@ async function boot() {
     }
   });
 
-  var btnLogout = document.getElementById('btnLogout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function () { logout(); });
-  }
-
   storedData = resolveData().data;
 
   renderEvento(storedData.evento);
@@ -294,6 +322,12 @@ async function boot() {
   setInterval(updateQR, 20000);
 
   track.addEventListener('click', function (e) {
+    if (suppressClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     var button = e.target.closest('.more-info-btn');
     if (!button) return;
 
