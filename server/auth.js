@@ -6,6 +6,7 @@ export const COOKIE_NAME = 'admin_session';
 export const SESSION_TTL_MS = 30 * 60 * 1000;        // 30 minutos (deslizante)
 const MAX_HOURS = Math.max(1, Number(process.env.SESSION_MAX_HOURS) || 12);
 export const SESSION_MAX_MS = MAX_HOURS * 60 * 60 * 1000; // teto absoluto
+export const GENERIC_SESSION_MS = 30 * 60 * 1000;    // senha genérica: 30 min fixos
 const REFRESH_THROTTLE_MS = 60 * 1000;               // grava no máximo 1x por minuto
 
 const SESSION_PREFIX = 'admin:sess:';
@@ -58,6 +59,15 @@ export function verifyPassword(password, stored) {
 
 // ---------- Sessão ----------
 
+export function normalizeRole(role) {
+  return role === 'guest' || role === 'generic' ? role : 'admin';
+}
+
+// A senha genérica tem sessão curta e sem renovação.
+export function sessionMaxMs(role) {
+  return normalizeRole(role) === 'generic' ? GENERIC_SESSION_MS : SESSION_MAX_MS;
+}
+
 function sessionKey(token) {
   return SESSION_PREFIX + sha256(token);
 }
@@ -66,14 +76,16 @@ export async function createSession({ deviceId, deviceLabel, ip, ua, role = 'adm
   const token = b64(crypto.randomBytes(32));
   const key = sessionKey(token);
   const now = Date.now();
-  const absoluteExpiresAt = now + SESSION_MAX_MS;
+  const normalizedRole = normalizeRole(role);
+  const maxMs = sessionMaxMs(normalizedRole);
+  const absoluteExpiresAt = now + maxMs;
   const expiresAt = Math.min(now + SESSION_TTL_MS, absoluteExpiresAt);
 
   const session = {
     id: crypto.randomUUID(),
     deviceId,
     deviceLabel,
-    role: role === 'guest' ? 'guest' : 'admin',
+    role: normalizedRole,
     ip,
     ua: String(ua || '').slice(0, 400),
     createdAt: now,
@@ -95,6 +107,9 @@ export async function destroySession(token) {
 }
 
 async function refreshSession(key, session) {
+  // Sessão da senha genérica é fixa: nunca renova.
+  if (normalizeRole(session.role) === 'generic') return session;
+
   const now = Date.now();
   if (now - session.lastSeenAt < REFRESH_THROTTLE_MS) return session;
 
@@ -123,10 +138,8 @@ export async function getSession(req) {
     return null;
   }
 
-  // Sessões criadas antes da separação de papéis são tratadas como admin.
-  if (session.role !== 'guest' && session.role !== 'admin') {
-    session.role = 'admin';
-  }
+  // Sessões antigas ou com papel desconhecido são tratadas como admin.
+  session.role = normalizeRole(session.role);
 
   const now = Date.now();
   if (now >= session.expiresAt || now >= session.absoluteExpiresAt) {
@@ -138,9 +151,9 @@ export async function getSession(req) {
   return { token, session };
 }
 
-export function setSessionCookie(res, token) {
+export function setSessionCookie(res, token, role = 'admin') {
   const secure = process.env.VERCEL_ENV === 'production' ? '; Secure' : '';
-  const maxAge = Math.floor(SESSION_TTL_MS / 1000);
+  const maxAge = Math.floor(sessionMaxMs(role) / 1000);
   res.setHeader(
     'Set-Cookie',
     `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`

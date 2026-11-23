@@ -27,6 +27,29 @@ body {
   margin-top: 4px;
 }
 
+.logout-btn {
+  margin-left: auto;
+  align-self: center;
+  border: 1px solid #2a4043;
+  background: transparent;
+  color: #9fb3b6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.logout-btn:hover,
+.logout-btn:active {
+  background: #223335;
+  color: #fff;
+}
+
+body.auth-pending .page {
+  visibility: hidden;
+}
+
 .event-header h1 {
   font-size: 16px;
   margin: 0 0 4px 0;

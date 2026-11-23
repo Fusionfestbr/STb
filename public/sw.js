@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meus-ingressos-v7';
+const CACHE_NAME = 'meus-ingressos-v8';
 
 // Arquivos estáveis do app. Arquivos que não existirem são ignorados
 // individualmente (um 404 não derruba mais a instalação inteira).

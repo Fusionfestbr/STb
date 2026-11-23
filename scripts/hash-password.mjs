@@ -51,6 +51,6 @@ if (password.length < 8) {
 const hash = hashPassword(password);
 
 console.log('\nCole o hash na variável correspondente:');
-console.log('  ADMIN_PASSWORD_HASH (admin)  ou  GUEST_PASSWORD_HASH (convidado)');
+console.log('  ADMIN_PASSWORD_HASH (admin) · GUEST_PASSWORD_HASH (convidado) · GENERIC_PASSWORD_HASH (genérica)');
 console.log('\n' + hash + '\n');
 console.log('Depois adicione/atualize a variável na Vercel e faça um novo deploy.');

@@ -110,25 +110,43 @@ export async function fetchSession() {
   }
 }
 
-export function goToLogin(reason) {
+function currentPage() {
+  const file = window.location.pathname.split('/').pop() || 'index.html';
+  return /^[A-Za-z0-9._-]+\.html$/.test(file) ? file : 'index.html';
+}
+
+export function goToLogin(reason, next) {
   const params = new URLSearchParams();
-  params.set('next', ADMIN_PAGE);
+  const target = next || currentPage();
+  params.set('next', target === LOGIN_PAGE ? 'index.html' : target);
   if (reason) params.set('reason', reason);
   window.location.replace(`${LOGIN_PAGE}?${params.toString()}`);
 }
 
-export async function requireSession() {
+export async function requireSession(next) {
   let session = null;
   try {
     session = await fetchSession();
   } catch (error) {
-    goToLogin(error.status === 0 ? 'network' : 'error');
+    goToLogin(error.status === 0 ? 'network' : 'error', next);
     throw error;
   }
 
   if (!session) {
-    goToLogin('expired');
+    goToLogin('login', next);
     throw new ApiError(401, 'unauthorized');
+  }
+
+  return session;
+}
+
+// Páginas de edição exigem admin. Convidados/genéricos só visualizam.
+export async function requireAdminSession() {
+  const session = await requireSession(ADMIN_PAGE);
+
+  if (session.role !== 'admin') {
+    window.location.replace('ingresso.html');
+    throw new ApiError(403, 'forbidden');
   }
 
   return session;

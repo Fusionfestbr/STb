@@ -1,4 +1,10 @@
+import { createSessionWatcher, requireSession, logout } from './auth.js';
 import { resolveData } from './defaults.js';
+
+// Se o navegador restaurar a página do cache (botão voltar), valida de novo.
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) window.location.reload();
+});
 
 var carousel = document.querySelector('.carousel');
 var track = document.getElementById('carouselTrack');
@@ -256,34 +262,59 @@ function bindCarousel() {
 
 // ---------- Init ----------
 
-storedData = resolveData().data;
+async function boot() {
+  let session;
 
-renderEvento(storedData.evento);
-renderedTickets = storedData.ingressos;
-renderizarIngressos(renderedTickets);
+  try {
+    session = await requireSession();
+  } catch (error) {
+    return; // requireSession já redirecionou para o login
+  }
 
-bindCarousel();
-setInterval(updateQR, 20000);
+  document.body.classList.remove('auth-pending');
 
-track.addEventListener('click', function (e) {
-  var button = e.target.closest('.more-info-btn');
-  if (!button) return;
+  createSessionWatcher(session, {
+    onExpire: function () {
+      window.location.replace('login.html?reason=expired');
+    }
+  });
 
-  var wrapper = button.closest('.ticket-wrapper');
-  var index = wrapper ? Number(wrapper.dataset.index) : 0;
-  openModal(index);
-});
+  var btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function () { logout(); });
+  }
 
-infoModal.addEventListener('click', function (e) {
-  if (e.target.hasAttribute('data-close') || e.target.closest('[data-close]')) closeModal();
-});
+  storedData = resolveData().data;
 
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape' && !infoModal.hidden) closeModal();
-});
+  renderEvento(storedData.evento);
+  renderedTickets = storedData.ingressos;
+  renderizarIngressos(renderedTickets);
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(function () { console.log('SW registrado'); })
-    .catch(function (err) { console.log('SW erro:', err); });
+  bindCarousel();
+  setInterval(updateQR, 20000);
+
+  track.addEventListener('click', function (e) {
+    var button = e.target.closest('.more-info-btn');
+    if (!button) return;
+
+    var wrapper = button.closest('.ticket-wrapper');
+    var index = wrapper ? Number(wrapper.dataset.index) : 0;
+    openModal(index);
+  });
+
+  infoModal.addEventListener('click', function (e) {
+    if (e.target.hasAttribute('data-close') || e.target.closest('[data-close]')) closeModal();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !infoModal.hidden) closeModal();
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(function () { console.log('SW registrado'); })
+      .catch(function (err) { console.log('SW erro:', err); });
+  }
 }
+
+boot();

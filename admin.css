@@ -482,6 +482,10 @@ body.auth-pending .container {
   background: #9fc7cb;
 }
 
+.device-badge.generic {
+  background: #c7b6e0;
+}
+
 .device-meta {
   font-size: 11px;
   color: #6b8285;

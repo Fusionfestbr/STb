@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f2c2f">
-  <meta name="description" content="Acesso administrativo aos ingressos">
+  <meta name="description" content="Acesso aos ingressos">
   <title>Entrar · Meus Ingressos</title>
 
   <link rel="manifest" href="manifest.json">
@@ -23,16 +23,12 @@
 
   <main class="login-page">
     <section class="login-card">
-      <a href="index.html" class="login-back" aria-label="Voltar">
-        <span class="material-symbols-outlined">arrow_back</span>
-      </a>
-
       <div class="login-brand">
         <div class="login-icon">
           <span class="material-symbols-outlined">confirmation_number</span>
         </div>
-        <h1>Área do administrador</h1>
-        <p>Entre para gerenciar seus ingressos e dispositivos.</p>
+        <h1>Acessar ingressos</h1>
+        <p>Digite a senha para entrar. Sem senha, nada é exibido.</p>
       </div>
 
       <form id="loginForm" novalidate>
@@ -55,7 +51,7 @@
       </form>
 
       <p class="login-note">
-        Sessão de 30 minutos, renovada enquanto você usa o painel.
+        O acesso expira automaticamente. Depois disso, é preciso digitar a senha de novo.
       </p>
       <p class="login-device" id="deviceLabel"></p>
     </section>

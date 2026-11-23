@@ -24,6 +24,13 @@ function nextPage() {
   return ADMIN_PAGE;
 }
 
+// Convidados e senha genérica não entram no painel de edição.
+function targetForRole(role) {
+  const target = nextPage();
+  if (role !== 'admin' && target === ADMIN_PAGE) return 'ingresso.html';
+  return target;
+}
+
 function showError(message) {
   errorBox.textContent = message;
   errorBox.hidden = false;
@@ -36,7 +43,8 @@ function clearError() {
 
 function showReasonFromQuery() {
   const reason = new URLSearchParams(window.location.search).get('reason');
-  if (reason === 'expired') showError('Sua sessão expirou. Entre novamente.');
+  if (reason === 'login') showError('Digite a senha para acessar seus ingressos.');
+  else if (reason === 'expired') showError('Sua sessão expirou. Entre novamente.');
   else if (reason === 'network') showError('Não foi possível conectar ao servidor. Tente novamente.');
   else if (reason === 'error') showError('Não foi possível validar sua sessão. Entre novamente.');
 }
@@ -86,7 +94,7 @@ form.addEventListener('submit', async (event) => {
   setLoading(true);
 
   try {
-    await api('/api/login', {
+    const result = await api('/api/login', {
       method: 'POST',
       body: {
         password,
@@ -95,7 +103,7 @@ form.addEventListener('submit', async (event) => {
       }
     });
 
-    window.location.replace(nextPage());
+    window.location.replace(targetForRole(result && result.role));
   } catch (error) {
     showError(messageForError(error));
     setLoading(false);
@@ -103,11 +111,11 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
-// Se já houver sessão válida, vai direto para o painel.
+// Se já houver sessão válida, vai direto para a página correta.
 (async () => {
   showReasonFromQuery();
   try {
     const session = await fetchSession();
-    if (session) window.location.replace(nextPage());
+    if (session) window.location.replace(targetForRole(session.role));
   } catch (e) {}
 })();

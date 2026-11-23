@@ -25,7 +25,7 @@
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 
-<body>
+<body class="auth-pending">
 
   <div class="container">
 
@@ -37,9 +37,12 @@
         <div class="icon">
           <span class="material-symbols-outlined">notifications</span>
         </div>
-        <a href="admin.html" class="icon" style="text-decoration:none" aria-label="Área do administrador">
+        <a href="admin.html" class="icon" id="adminLink" style="text-decoration:none" aria-label="Área do administrador">
           <span class="material-symbols-outlined">person</span>
         </a>
+        <button class="icon icon-button" id="btnLogout" type="button" aria-label="Sair">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
       </div>
     </header>
 
@@ -77,6 +80,7 @@
   </div>
 
   <script type="module">
+    import { createSessionWatcher, requireSession, logout } from './auth.js';
     import { resolveData } from './defaults.js';
 
     const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -88,6 +92,13 @@
     const monthLabel = document.getElementById('monthLabel');
     const tabUpcoming = document.getElementById('tabUpcoming');
     const tabPast = document.getElementById('tabPast');
+    const adminLink = document.getElementById('adminLink');
+    const btnLogout = document.getElementById('btnLogout');
+
+    // Se o navegador restaurar a página do cache (botão voltar), valida de novo.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) window.location.reload();
+    });
 
     let eventDate = null;
 
@@ -154,27 +165,48 @@
       applyTab();
     }
 
-    tabUpcoming.addEventListener('click', () => {
-      tabUpcoming.classList.add('active');
-      tabPast.classList.remove('active');
-      card.hidden = isPast();
-      emptyState.hidden = !card.hidden;
-    });
+    async function boot() {
+      let session;
 
-    tabPast.addEventListener('click', () => {
-      tabPast.classList.add('active');
-      tabUpcoming.classList.remove('active');
-      card.hidden = !isPast();
-      emptyState.hidden = !card.hidden;
-    });
+      try {
+        session = await requireSession();
+      } catch (error) {
+        return; // requireSession já redirecionou para o login
+      }
 
-    load();
+      document.body.classList.remove('auth-pending');
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW registrado'))
-        .catch((err) => console.log('SW erro:', err));
+      createSessionWatcher(session, {
+        onExpire: () => window.location.replace('login.html?reason=expired')
+      });
+
+      if (adminLink && session.role !== 'admin') adminLink.hidden = true;
+      if (btnLogout) btnLogout.addEventListener('click', () => logout());
+
+      tabUpcoming.addEventListener('click', () => {
+        tabUpcoming.classList.add('active');
+        tabPast.classList.remove('active');
+        card.hidden = isPast();
+        emptyState.hidden = !card.hidden;
+      });
+
+      tabPast.addEventListener('click', () => {
+        tabPast.classList.add('active');
+        tabUpcoming.classList.remove('active');
+        card.hidden = !isPast();
+        emptyState.hidden = !card.hidden;
+      });
+
+      load();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('SW registrado'))
+          .catch((err) => console.log('SW erro:', err));
+      }
     }
+
+    boot();
   </script>
 
 </body>

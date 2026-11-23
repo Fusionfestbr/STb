@@ -63,6 +63,11 @@ export default async function handler(req, res) {
     const guestHash = process.env.GUEST_PASSWORD_HASH;
     if (guestHash && verifyPassword(password, guestHash)) {
       role = 'guest';
+    } else {
+      const genericHash = process.env.GENERIC_PASSWORD_HASH;
+      if (genericHash && verifyPassword(password, genericHash)) {
+        role = 'generic';
+      }
     }
   }
 
@@ -71,7 +76,7 @@ export default async function handler(req, res) {
   }
 
   const { token, session } = await createSession({ deviceId, deviceLabel, ip, ua, role });
-  setSessionCookie(res, token);
+  setSessionCookie(res, token, session.role);
 
   return sendJson(res, 200, {
     ok: true,

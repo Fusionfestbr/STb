@@ -51,6 +51,16 @@ body {
   cursor: pointer;
 }
 
+button.icon {
+  border: none;
+  padding: 0;
+  font: inherit;
+}
+
+body.auth-pending .container {
+  visibility: hidden;
+}
+
 .material-symbols-outlined {
   font-variation-settings:
   'FILL' 0,

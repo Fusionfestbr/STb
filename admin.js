@@ -2,7 +2,7 @@ import {
   createSessionWatcher,
   formatRemaining,
   logout,
-  requireSession
+  requireAdminSession
 } from './auth.js';
 import { initDevices } from './admin-devices.js';
 import {
@@ -14,6 +14,11 @@ import {
 } from './defaults.js';
 
 var CUSTOM_THUMB_VALUE = '__custom';
+
+// Se o navegador restaurar a página do cache (botão voltar), valida de novo.
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) window.location.reload();
+});
 
 var ingressosList = document.getElementById('ingressos-list');
 var btnAdd = document.getElementById('btnAdd');
@@ -32,8 +37,6 @@ var thumbPreview = document.getElementById('thumbPreview');
 var uploadHint = document.getElementById('uploadHint');
 var sessionTimer = document.getElementById('sessionTimer');
 var roleBadge = document.getElementById('roleBadge');
-var securityTitle = document.getElementById('securityTitle');
-var securityCard = document.getElementById('securityCard');
 var dataNotice = document.getElementById('dataNotice');
 var btnExport = document.getElementById('btnExport');
 var importFile = document.getElementById('importFile');
@@ -330,18 +333,11 @@ function updateTimer(expiresAt) {
 function setupSession(session) {
   updateTimer(session.expiresAt);
 
-  var isAdmin = session.role !== 'guest';
-
   if (roleBadge) {
     roleBadge.hidden = false;
-    roleBadge.textContent = isAdmin ? 'Admin' : 'Convidado';
-    roleBadge.classList.toggle('admin', isAdmin);
-    roleBadge.classList.toggle('guest', !isAdmin);
-  }
-
-  if (!isAdmin) {
-    if (securityTitle) securityTitle.hidden = true;
-    if (securityCard) securityCard.hidden = true;
+    roleBadge.textContent = 'Admin';
+    roleBadge.classList.add('admin');
+    roleBadge.classList.remove('guest');
   }
 
   createSessionWatcher(session, {
@@ -360,9 +356,9 @@ async function init() {
   var session;
 
   try {
-    session = await requireSession();
+    session = await requireAdminSession();
   } catch (error) {
-    return; // requireSession já redirecionou
+    return; // requireAdminSession já redirecionou
   }
 
   document.body.classList.remove('auth-pending');
@@ -453,7 +449,7 @@ async function init() {
     setPreview(eventoThumb.value);
   }
 
-  if (session.role !== 'guest') initDevices();
+  if (session.role === 'admin') initDevices();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
