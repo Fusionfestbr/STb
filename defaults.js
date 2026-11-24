@@ -4,6 +4,55 @@
 export const STORAGE_KEY = 'meus-ingressos-data';
 export const BACKUP_KEY = 'meus-ingressos-data-backup';
 
+// Ingressos fixos: sempre aparecem, mesmo que o armazenamento local seja
+// limpo, corrompido ou que alguém tente removê-los no painel.
+export const FIXED_TICKETS = [
+  {
+    fixedId: 'fixo-1',
+    setor: 'Arena Gramado',
+    acesso: 'Portão 03 e 10',
+    titular: 'Camila Souza - 121.714.481-89',
+    taxa: '-',
+    secao: 'ARENA GRAMADO',
+    fileira: 'Não numerado',
+    abertura: '14:00',
+    inicio: '16:00'
+  },
+  {
+    fixedId: 'fixo-2',
+    setor: 'Arena Gramado',
+    acesso: 'Portão 03, 10',
+    titular: 'Camila Guedes - 121.714.481-87',
+    taxa: '-',
+    secao: 'ARENA GRAMADO',
+    fileira: 'Não numerado',
+    abertura: '14:00',
+    inicio: '16:00'
+  },
+  {
+    fixedId: 'fixo-3',
+    setor: 'Arena Gramado',
+    acesso: 'Portão 03, 10',
+    titular: 'Camila Souza - 121.714.481-87',
+    taxa: '-',
+    secao: 'ARENA GRAMADO',
+    fileira: 'Não numerado',
+    abertura: '14:00',
+    inicio: '16:00'
+  },
+  {
+    fixedId: 'fixo-4',
+    setor: 'Arena Gramado',
+    acesso: 'Portão 03 e 10',
+    titular: 'Camila Souza - 121.714.481-87',
+    taxa: '-',
+    secao: 'ARENA GRAMADO',
+    fileira: 'Não numerado',
+    abertura: '14:00',
+    inicio: '16:00'
+  }
+];
+
 export const DEFAULT_DATA = {
   evento: {
     nome: 'Best of Blues and Rock',
@@ -12,49 +61,19 @@ export const DEFAULT_DATA = {
     local: 'Auditório do Ibirapuera (Platéia Externa)',
     thumb: 'assets/best.png'
   },
-  ingressos: [
-    {
-      setor: 'Arena Gramado',
-      acesso: 'Portão 03 e 10',
-      titular: 'Camila Souza - 121.714.481-89',
-      taxa: '-',
-      secao: 'ARENA GRAMADO',
-      fileira: 'Não numerado',
-      abertura: '14:00',
-      inicio: '16:00'
-    },
-    {
-      setor: 'Arena Gramado',
-      acesso: 'Portão 03, 10',
-      titular: 'Camila Guedes - 121.714.481-87',
-      taxa: '-',
-      secao: 'ARENA GRAMADO',
-      fileira: 'Não numerado',
-      abertura: '14:00',
-      inicio: '16:00'
-    },
-    {
-      setor: 'Arena Gramado',
-      acesso: 'Portão 03, 10',
-      titular: 'Camila Souza - 121.714.481-87',
-      taxa: '-',
-      secao: 'ARENA GRAMADO',
-      fileira: 'Não numerado',
-      abertura: '14:00',
-      inicio: '16:00'
-    },
-    {
-      setor: 'Arena Gramado',
-      acesso: 'Portão 03 e 10',
-      titular: 'Camila Souza - 121.714.481-87',
-      taxa: '-',
-      secao: 'ARENA GRAMADO',
-      fileira: 'Não numerado',
-      abertura: '14:00',
-      inicio: '16:00'
-    }
-  ]
+  ingressos: FIXED_TICKETS
 };
+
+const TICKET_FIELDS = [
+  'setor',
+  'acesso',
+  'titular',
+  'taxa',
+  'secao',
+  'fileira',
+  'abertura',
+  'inicio'
+];
 
 export function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
@@ -84,6 +103,52 @@ export function hasBackup() {
   return Boolean(readBackupData());
 }
 
+function isTicket(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+// Identifica um ingresso fixo mesmo quando ele veio de uma versão antiga
+// do app, que ainda não gravava o fixedId.
+function sameAsFixed(ticket, fixed) {
+  if (ticket.fixedId) return ticket.fixedId === fixed.fixedId;
+
+  if (ticket.titular && fixed.titular && ticket.titular === fixed.titular) {
+    return true;
+  }
+
+  return TICKET_FIELDS.every(function (key) {
+    return String(ticket[key] == null ? '' : ticket[key]) ===
+      String(fixed[key] == null ? '' : fixed[key]);
+  });
+}
+
+// Mescla os fixos com os salvos, sem duplicar. Se um fixo foi editado,
+// a edição é mantida; se foi apagado, o padrão volta.
+export function mergeFixedTickets(tickets) {
+  const saved = Array.isArray(tickets) ? tickets.filter(isTicket) : [];
+  const used = new Set();
+
+  const fixed = FIXED_TICKETS.map(function (def) {
+    const matchIndex = saved.findIndex(function (ticket, index) {
+      return !used.has(index) && sameAsFixed(ticket, def);
+    });
+
+    if (matchIndex === -1) return cloneData(def);
+
+    used.add(matchIndex);
+
+    return Object.assign({}, cloneData(def), saved[matchIndex], {
+      fixedId: def.fixedId
+    });
+  });
+
+  const extras = saved.filter(function (ticket, index) {
+    return !used.has(index);
+  });
+
+  return fixed.concat(extras);
+}
+
 // Retorna sempre um conjunto completo de dados, sem sobrescrever nada.
 export function resolveData() {
   const saved = readSavedData();
@@ -102,7 +167,7 @@ export function resolveData() {
   };
 
   const hasTickets = Array.isArray(saved.ingressos) && saved.ingressos.length > 0;
-  const ingressos = hasTickets ? saved.ingressos : cloneData(DEFAULT_DATA.ingressos);
+  const ingressos = mergeFixedTickets(saved.ingressos);
 
   return { data: { evento, ingressos }, isFallback: !hasTickets };
 }

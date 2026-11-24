@@ -153,12 +153,27 @@ function criarCardIngresso(dados, index) {
   var card = document.createElement('div');
   card.className = 'ingresso-card';
 
+  var isFixed = Boolean(dados && dados.fixedId);
+  if (isFixed) {
+    card.dataset.fixedId = dados.fixedId;
+    card.classList.add('fixed');
+  }
+
   var header = document.createElement('div');
   header.className = 'ingresso-header';
 
   var num = document.createElement('span');
   num.className = 'ingresso-num';
   num.textContent = 'Ingresso ' + (index + 1);
+
+  header.appendChild(num);
+
+  if (isFixed) {
+    var fixedBadge = document.createElement('span');
+    fixedBadge.className = 'fixed-badge';
+    fixedBadge.textContent = 'Fixo';
+    header.appendChild(fixedBadge);
+  }
 
   var btnRem = document.createElement('button');
   btnRem.type = 'button';
@@ -169,7 +184,8 @@ function criarCardIngresso(dados, index) {
     renumerar();
   });
 
-  header.appendChild(num);
+  if (isFixed) btnRem.hidden = true;
+
   header.appendChild(btnRem);
   card.appendChild(header);
 
@@ -264,6 +280,7 @@ function salvar() {
   var cards = ingressosList.querySelectorAll('.ingresso-card');
   cards.forEach(function (card) {
     var ing = {};
+    if (card.dataset.fixedId) ing.fixedId = card.dataset.fixedId;
     card.querySelectorAll('input').forEach(function (input) {
       var key = input.getAttribute('data-key');
       if (key) ing[key] = input.value.trim();

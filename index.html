@@ -135,8 +135,10 @@
       tabUpcoming.classList.toggle('active', !past);
       tabPast.classList.toggle('active', past);
 
-      card.hidden = past;
-      emptyState.hidden = !past;
+      // O evento existe: mostra o card na aba correspondente.
+      // O estado vazio fica só para quando a aba não tem evento.
+      card.hidden = false;
+      emptyState.hidden = true;
 
       if (past) {
         badge.textContent = 'ENCERRADO';
