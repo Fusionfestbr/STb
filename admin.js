@@ -51,7 +51,7 @@ var camposTemplate = [
   { key: 'taxa', label: 'TAXA', placeholder: 'Ex: INTEIRA - R$380,00' },
   { key: 'secao', label: 'SEÇÃO', placeholder: 'Ex: CADEIRA SUPERIOR' },
   { key: 'fileira', label: 'FILEIRA', placeholder: 'Ex: Não numerado' },
-  { key: 'abertura', label: 'ABERTURA', placeholder: 'Ex: 14:00' },
+  { key: 'abertura', label: 'ABERTURA', placeholder: 'Ex: 19:30' },
   { key: 'inicio', label: 'INÍCIO', placeholder: 'Ex: 20:45' }
 ];
 
@@ -143,7 +143,7 @@ eventoThumb.addEventListener('change', function () {
 });
 
 function selectedThumb() {
-  if (eventoThumb.value === CUSTOM_THUMB_VALUE) return customThumb || 'assets/best.png';
+  if (eventoThumb.value === CUSTOM_THUMB_VALUE) return customThumb || 'assets/NO.png';
   return eventoThumb.value;
 }
 
@@ -459,7 +459,7 @@ async function init() {
       var hasOption = Array.prototype.some.call(eventoThumb.options, function (option) {
         return option.value === dados.evento.thumb;
       });
-      eventoThumb.value = hasOption ? dados.evento.thumb : 'assets/best.png';
+      eventoThumb.value = hasOption ? dados.evento.thumb : 'assets/NO.png';
       setPreview(eventoThumb.value);
     }
   } else {

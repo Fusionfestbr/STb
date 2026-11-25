@@ -9,14 +9,14 @@ export const BACKUP_KEY = 'meus-ingressos-data-backup';
 export const FIXED_TICKETS = [
   {
     fixedId: 'fixo-1',
-    setor: 'Arena Gramado',
+    setor: 'Pista',
     acesso: 'Portão 03 e 10',
     titular: 'Camila Souza - 121.714.481-89',
     taxa: '-',
-    secao: 'ARENA GRAMADO',
+    secao: 'PISTA',
     fileira: 'Não numerado',
-    abertura: '14:00',
-    inicio: '16:00'
+    abertura: '19:30',
+    inicio: '20:30'
   },
   {
     fixedId: 'fixo-2',
@@ -26,8 +26,8 @@ export const FIXED_TICKETS = [
     taxa: '-',
     secao: 'ARENA GRAMADO',
     fileira: 'Não numerado',
-    abertura: '14:00',
-    inicio: '16:00'
+    abertura: '19:30',
+    inicio: '20:30'
   },
   {
     fixedId: 'fixo-3',
@@ -37,8 +37,8 @@ export const FIXED_TICKETS = [
     taxa: '-',
     secao: 'ARENA GRAMADO',
     fileira: 'Não numerado',
-    abertura: '14:00',
-    inicio: '16:00'
+    abertura: '19:30',
+    inicio: '20:30'
   },
   {
     fixedId: 'fixo-4',
@@ -48,18 +48,18 @@ export const FIXED_TICKETS = [
     taxa: '-',
     secao: 'ARENA GRAMADO',
     fileira: 'Não numerado',
-    abertura: '14:00',
-    inicio: '16:00'
+    abertura: '19:30',
+    inicio: '20:30'
   }
 ];
 
 export const DEFAULT_DATA = {
   evento: {
-    nome: 'Best of Blues and Rock',
-    data: '22/11/2026',
-    horario: '16:00hs',
-    local: 'Auditório do Ibirapuera (Platéia Externa)',
-    thumb: 'assets/best.png'
+    nome: 'New Order',
+    data: '25/11/2026',
+    horario: '19:30hs',
+    local: 'Espaço Unimed',
+    thumb: 'assets/NO.png'
   },
   ingressos: FIXED_TICKETS
 };

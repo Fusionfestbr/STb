@@ -30,7 +30,7 @@ const ASSETS = [
   './assets/icon-192.png',
   './assets/icon-384.png',
   './assets/icon-512.png',
-  './assets/best.png',
+  './assets/NO.png',
   './assets/quentro.png',
   './assets/stb.png',
   './assets/ticketmaster.png',
@@ -89,7 +89,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
           return response;
         })
         .catch(() => caches.match(request)
@@ -108,7 +108,7 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response && response.status === 200) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
           }
           return response;
         })
