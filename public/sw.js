@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meus-ingressos-v10';
+const CACHE_NAME = 'meus-ingressos-v11';
 
 // Arquivos estáveis do app. Arquivos que não existirem são ignorados
 // individualmente (um 404 não derruba mais a instalação inteira).
@@ -21,6 +21,7 @@ const ASSETS = [
   './auth.js',
   './admin-devices.js',
   './defaults.js',
+  './data.js',
   './manifest.json',
   './assets/icon-16.png',
   './assets/icon-32.png',

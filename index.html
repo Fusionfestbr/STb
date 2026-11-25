@@ -82,7 +82,7 @@
 
   <script type="module">
     import { createSessionWatcher, requireSession, logout } from './auth.js';
-    import { resolveData } from './defaults.js';
+    import { loadData } from './data.js';
 
     const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -102,6 +102,9 @@
     });
 
     let eventDate = null;
+    let dataSignature = '';
+    let refreshing = false;
+    let lastRefreshAt = 0;
 
     function parseDateBR(value) {
       if (!value) return null;
@@ -150,8 +153,7 @@
       }
     }
 
-    function load() {
-      const { data } = resolveData();
+    function renderData(data) {
       const ev = data.evento;
 
       document.getElementById('eventThumb').src = ev.thumb;
@@ -160,6 +162,7 @@
       document.getElementById('eventHorario').textContent = ev.horario;
       document.getElementById('eventLocal').textContent = ev.local;
       eventDate = parseDateBR(ev.data);
+      dataSignature = JSON.stringify(data);
 
       if (eventDate) {
         monthLabel.textContent = `${MONTHS[eventDate.getMonth()]} ${eventDate.getFullYear()}`;
@@ -168,11 +171,28 @@
       applyTab();
     }
 
-    async function boot() {
-      let session;
+    async function refreshData() {
+      if (refreshing || document.visibilityState === 'hidden') return;
+      if (Date.now() - lastRefreshAt < 5000) return;
+
+      lastRefreshAt = Date.now();
+      refreshing = true;
 
       try {
-        session = await requireSession();
+        const loaded = await loadData();
+        if (JSON.stringify(loaded.data) === dataSignature) return;
+        renderData(loaded.data);
+      } finally {
+        refreshing = false;
+      }
+    }
+
+    async function boot() {
+      let session;
+      let loaded;
+
+      try {
+        [session, loaded] = await Promise.all([requireSession(), loadData()]);
       } catch (error) {
         return; // requireSession já redirecionou para o login
       }
@@ -200,7 +220,13 @@
         emptyState.hidden = !card.hidden;
       });
 
-      load();
+      renderData(loaded.data);
+      lastRefreshAt = Date.now();
+
+      window.addEventListener('focus', refreshData);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshData();
+      });
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')

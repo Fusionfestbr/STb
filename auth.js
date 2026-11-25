@@ -9,6 +9,7 @@ export class ApiError extends Error {
     super(code || 'api_error');
     this.status = status;
     this.code = code || 'api_error';
+    this.payload = null;
   }
 }
 
@@ -76,11 +77,21 @@ export async function api(path, options = {}) {
     config.body = JSON.stringify(options.body);
   }
 
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  let timer = null;
+
+  if (controller) {
+    config.signal = controller.signal;
+    timer = setTimeout(() => controller.abort(), 15000);
+  }
+
   let response;
   try {
     response = await fetch(path, config);
   } catch (e) {
-    throw new ApiError(0, 'network_error');
+    throw new ApiError(0, e && e.name === 'AbortError' ? 'timeout' : 'network_error');
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 
   let data = null;
@@ -89,7 +100,9 @@ export async function api(path, options = {}) {
   } catch (e) {}
 
   if (!response.ok) {
-    throw new ApiError(response.status, data && data.error ? data.error : 'request_failed');
+    const error = new ApiError(response.status, data && data.error ? data.error : 'request_failed');
+    error.payload = data;
+    throw error;
   }
 
   if (data === null) {

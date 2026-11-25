@@ -1,5 +1,5 @@
 import { createSessionWatcher, requireSession } from './auth.js';
-import { resolveData } from './defaults.js';
+import { loadData } from './data.js';
 
 // Se o navegador restaurar a página do cache (botão voltar), valida de novo.
 window.addEventListener('pageshow', function (event) {
@@ -24,6 +24,10 @@ var qrIndex = 0;
 var currentIndex = 0;
 var storedData = null;
 var renderedTickets = [];
+var dataSignature = '';
+var lastRefreshAt = 0;
+var refreshPending = false;
+var refreshing = false;
 
 function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
@@ -97,6 +101,7 @@ function renderizarIngressos(ingressos) {
     var wrapper = document.createElement('div');
     wrapper.className = 'ticket-wrapper';
     wrapper.dataset.index = String(index);
+    if (ing && ing.fixedId) wrapper.setAttribute('data-fixed-id', ing.fixedId);
     wrapper.innerHTML = ticketHtml(ing, index);
     track.appendChild(wrapper);
   });
@@ -170,6 +175,11 @@ function openModal(index) {
 function closeModal() {
   infoModal.hidden = true;
   document.body.classList.remove('modal-open');
+
+  if (refreshPending) {
+    refreshPending = false;
+    refreshData();
+  }
 }
 
 // ---------- QR rotativo ----------
@@ -293,13 +303,53 @@ function bindCarousel() {
   }
 }
 
+// ---------- Dados compartilhados ----------
+
+function applyData(data) {
+  storedData = data;
+  dataSignature = JSON.stringify(data);
+  renderEvento(data.evento);
+  renderedTickets = data.ingressos;
+  renderizarIngressos(renderedTickets);
+}
+
+async function refreshData() {
+  if (refreshing || document.visibilityState === 'hidden') return;
+
+  if (!infoModal.hidden) {
+    refreshPending = true;
+    return;
+  }
+
+  if (Date.now() - lastRefreshAt < 5000) return;
+  lastRefreshAt = Date.now();
+  refreshing = true;
+
+  try {
+    var loaded = await loadData();
+    var nextSignature = JSON.stringify(loaded.data);
+
+    if (nextSignature === dataSignature) return;
+
+    var previousIndex = currentIndex;
+    applyData(loaded.data);
+    currentIndex = Math.min(previousIndex, Math.max(0, totalTickets() - 1));
+    moveCarousel();
+  } finally {
+    refreshing = false;
+  }
+}
+
 // ---------- Init ----------
 
 async function boot() {
   let session;
+  let loaded;
 
   try {
-    session = await requireSession();
+    var results = await Promise.all([requireSession(), loadData()]);
+    session = results[0];
+    loaded = results[1];
   } catch (error) {
     return; // requireSession já redirecionou para o login
   }
@@ -312,11 +362,13 @@ async function boot() {
     }
   });
 
-  storedData = resolveData().data;
+  applyData(loaded.data);
+  lastRefreshAt = Date.now();
 
-  renderEvento(storedData.evento);
-  renderedTickets = storedData.ingressos;
-  renderizarIngressos(renderedTickets);
+  window.addEventListener('focus', refreshData);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) refreshData();
+  });
 
   bindCarousel();
   setInterval(updateQR, 20000);

@@ -38,9 +38,7 @@
       </div>
     </header>
 
-    <p class="data-notice" id="dataNotice" hidden>
-      Você está vendo os ingressos de exemplo. Clique em <strong>Salvar</strong> para gravar neste dispositivo.
-    </p>
+    <p class="data-notice" id="dataNotice" hidden></p>
 
     <!-- EVENTO -->
     <p class="section-title">Evento</p>
@@ -114,12 +112,13 @@
     <p class="section-title">Backup</p>
 
     <div class="backup-card">
-      <p class="backup-hint">Seus dados ficam apenas neste navegador. Exporte um arquivo para não perder.</p>
+      <p class="backup-hint">Os ingressos ficam salvos no servidor e aparecem em todos os aparelhos. Exporte um JSON como cópia extra.</p>
       <div class="backup-actions">
         <button class="btn-ghost" id="btnExport" type="button">Exportar JSON</button>
         <label class="btn-ghost" for="importFile">Importar JSON</label>
         <input type="file" id="importFile" accept="application/json,.json" hidden>
-        <button class="btn-ghost" id="btnRestoreBackup" type="button">Restaurar backup</button>
+        <button class="btn-ghost" id="btnRestoreBackup" type="button">Backup local</button>
+        <button class="btn-ghost" id="btnRestoreServerBackup" type="button">Backup do servidor</button>
       </div>
     </div>
 

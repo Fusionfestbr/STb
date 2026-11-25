@@ -52,7 +52,7 @@ export const FIXED_TICKETS = [
     inicio: '20:30'
   },
   {
-    fixedId: 'fixo-4',
+    fixedId: 'fixo-5',
     setor: 'Camarote B',
     acesso: '-',
     titular: 'Camila Souza - 121.714.481-87',
@@ -118,37 +118,58 @@ function isTicket(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-// Identifica um ingresso fixo mesmo quando ele veio de uma versão antiga
-// do app, que ainda não gravava o fixedId.
-function sameAsFixed(ticket, fixed) {
-  if (ticket.fixedId) return ticket.fixedId === fixed.fixedId;
-
-  if (ticket.titular && fixed.titular && ticket.titular === fixed.titular) {
-    return true;
-  }
-
+function hasSameFields(ticket, fixed) {
   return TICKET_FIELDS.every(function (key) {
     return String(ticket[key] == null ? '' : ticket[key]) ===
       String(fixed[key] == null ? '' : fixed[key]);
   });
 }
 
+function hasSameTitular(ticket, fixed) {
+  return Boolean(ticket.titular && fixed.titular && ticket.titular === fixed.titular);
+}
+
 // Mescla os fixos com os salvos, sem duplicar. Se um fixo foi editado,
 // a edição é mantida; se foi apagado, o padrão volta.
+//
+// A busca acontece em três etapas para lidar com dados antigos:
+// 1. conteúdo idêntico ao padrão (resolve IDs duplicados/renomeados);
+// 2. fixedId conhecido (mantém edições feitas no painel);
+// 3. titular, apenas para dados muito antigos sem fixedId.
 export function mergeFixedTickets(tickets) {
   const saved = Array.isArray(tickets) ? tickets.filter(isTicket) : [];
   const used = new Set();
+  const assigned = FIXED_TICKETS.map(function () { return -1; });
 
-  const fixed = FIXED_TICKETS.map(function (def) {
-    const matchIndex = saved.findIndex(function (ticket, index) {
-      return !used.has(index) && sameAsFixed(ticket, def);
+  function assign(match) {
+    FIXED_TICKETS.forEach(function (def, defIndex) {
+      if (assigned[defIndex] !== -1) return;
+
+      const matchIndex = saved.findIndex(function (ticket, index) {
+        return !used.has(index) && match(ticket, def);
+      });
+
+      if (matchIndex !== -1) {
+        assigned[defIndex] = matchIndex;
+        used.add(matchIndex);
+      }
     });
+  }
 
-    if (matchIndex === -1) return cloneData(def);
+  assign(hasSameFields);
+  assign(function (ticket, def) {
+    return Boolean(ticket.fixedId) && ticket.fixedId === def.fixedId;
+  });
+  assign(function (ticket, def) {
+    return !ticket.fixedId && hasSameTitular(ticket, def);
+  });
 
-    used.add(matchIndex);
+  const fixed = FIXED_TICKETS.map(function (def, index) {
+    const savedIndex = assigned[index];
 
-    return Object.assign({}, cloneData(def), saved[matchIndex], {
+    if (savedIndex === -1) return cloneData(def);
+
+    return Object.assign({}, cloneData(def), saved[savedIndex], {
       fixedId: def.fixedId
     });
   });
@@ -198,6 +219,30 @@ export function saveData(data) {
     }
   }
   writeData(data);
+}
+
+// Atualiza o cache local com dados vindos do servidor. Se o aparelho tinha
+// uma versão diferente, ela vira backup antes de ser substituída.
+export function cacheData(data) {
+  const nextRaw = JSON.stringify(data);
+  const currentRaw = localStorage.getItem(STORAGE_KEY);
+
+  if (currentRaw === nextRaw) {
+    return { changed: false, backedUp: false };
+  }
+
+  let backedUp = false;
+  if (currentRaw) {
+    try {
+      localStorage.setItem(BACKUP_KEY, currentRaw);
+      backedUp = true;
+    } catch (e) {
+      // Sem espaço para o backup: segue com a gravação principal.
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEY, nextRaw);
+  return { changed: true, backedUp };
 }
 
 export function restoreDefaults() {

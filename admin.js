@@ -6,12 +6,16 @@ import {
 } from './auth.js';
 import { initDevices } from './admin-devices.js';
 import {
-  resolveData,
-  saveData,
-  restoreDefaults,
-  restoreBackup,
-  hasBackup
+  DEFAULT_DATA,
+  cloneData,
+  readBackupData,
+  resolveData
 } from './defaults.js';
+import {
+  fetchSharedBackup,
+  loadData,
+  publishSharedData
+} from './data.js';
 
 var CUSTOM_THUMB_VALUE = '__custom';
 
@@ -41,8 +45,12 @@ var dataNotice = document.getElementById('dataNotice');
 var btnExport = document.getElementById('btnExport');
 var importFile = document.getElementById('importFile');
 var btnRestoreBackup = document.getElementById('btnRestoreBackup');
+var btnRestoreServerBackup = document.getElementById('btnRestoreServerBackup');
 
 var customThumb = null;
+var lastVersion = 0;
+var lastData = null;
+var saving = false;
 
 var camposTemplate = [
   { key: 'setor', label: 'SETOR', placeholder: 'Ex: Cadeira Superior' },
@@ -85,18 +93,10 @@ function loadImage(src) {
   });
 }
 
-async function prepareImage(file) {
-  if (file.size > 12 * 1024 * 1024) {
-    throw new Error('too_large');
-  }
-
-  var dataUrl = await readFileAsDataUrl(file);
-  var img = await loadImage(dataUrl);
-
-  var maxSide = 1200;
+function renderImage(img, maxSide, quality) {
   var scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-  var width = Math.round(img.width * scale);
-  var height = Math.round(img.height * scale);
+  var width = Math.max(1, Math.round(img.width * scale));
+  var height = Math.max(1, Math.round(img.height * scale));
 
   var canvas = document.createElement('canvas');
   canvas.width = width;
@@ -106,7 +106,34 @@ async function prepareImage(file) {
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(img, 0, 0, width, height);
 
-  return canvas.toDataURL('image/jpeg', 0.82);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+async function prepareImage(file) {
+  if (file.size > 12 * 1024 * 1024) {
+    throw new Error('too_large');
+  }
+
+  var dataUrl = await readFileAsDataUrl(file);
+  var img = await loadImage(dataUrl);
+  var attempts = [
+    [1200, 0.82],
+    [1100, 0.78],
+    [1000, 0.72],
+    [900, 0.68],
+    [800, 0.62],
+    [700, 0.58],
+    [600, 0.52]
+  ];
+  var target = 280 * 1024;
+  var best = '';
+
+  for (var i = 0; i < attempts.length; i += 1) {
+    best = renderImage(img, attempts[i][0], attempts[i][1]);
+    if (best.length <= target) return best;
+  }
+
+  throw new Error('too_large_after_compress');
 }
 
 eventoThumbFile.addEventListener('change', async function () {
@@ -119,12 +146,14 @@ eventoThumbFile.addEventListener('change', async function () {
     customThumb = await prepareImage(file);
     eventoThumb.value = CUSTOM_THUMB_VALUE;
     setPreview(customThumb);
-    uploadHint.textContent = 'Imagem otimizada automaticamente para caber no armazenamento local.';
+    uploadHint.textContent = 'Imagem otimizada automaticamente para o armazenamento compartilhado.';
     uploadHint.hidden = false;
   } catch (error) {
     uploadHint.textContent = error.message === 'too_large'
       ? 'Imagem muito grande. Escolha um arquivo de até 12 MB.'
-      : 'Não foi possível processar essa imagem.';
+      : error.message === 'too_large_after_compress'
+        ? 'Imagem muito grande mesmo após a compressão. Escolha uma imagem menor.'
+        : 'Não foi possível processar essa imagem.';
     uploadHint.hidden = false;
   } finally {
     eventoThumbFile.value = '';
@@ -265,7 +294,7 @@ function showToast(message, isError) {
   }, 2400);
 }
 
-function salvar() {
+function dadosDoFormulario() {
   var dados = {
     evento: {
       nome: eventoNome.value.trim(),
@@ -288,21 +317,57 @@ function salvar() {
     dados.ingressos.push(ing);
   });
 
-  try {
-    saveData(dados);
-  } catch (error) {
-    showToast('Armazenamento cheio. Use uma imagem menor.', true);
-    return false;
-  }
+  return dados;
+}
 
-  showToast('Salvo com sucesso!', false);
-  return true;
+function setPublishing(active) {
+  btnSave.disabled = active;
+  if (btnAdd) btnAdd.disabled = active;
+  if (btnPreview) btnPreview.disabled = active;
+  if (btnReset) btnReset.disabled = active;
+  btnSave.textContent = active ? 'Publicando...' : 'Salvar';
+}
+
+function publishErrorMessage(error) {
+  if (!error) return 'Não foi possível publicar. Tente novamente.';
+  if (error.status === 409) return 'Outro dispositivo publicou antes. Recarregue a página para ver a versão mais recente.';
+  if (error.status === 413) return 'Conteúdo muito grande. Envie uma imagem menor e salve novamente.';
+  if (error.status === 403) return 'Sua sessão não permite publicar. Entre novamente como admin.';
+  if (error.status === 401) return 'Sessão expirada. Entre novamente para publicar.';
+  if (error.status === 0) return 'Sem conexão com o servidor. Verifique a internet e tente novamente.';
+  return 'Não foi possível publicar. Tente novamente em instantes.';
+}
+
+async function publicar(dados, mensagem) {
+  if (saving) return false;
+
+  saving = true;
+  setPublishing(true);
+
+  try {
+    var result = await publishSharedData(dados, lastVersion);
+    lastVersion = result.version;
+    lastData = result.data;
+    showNotice('');
+    showToast(mensagem || 'Publicado para todos os aparelhos!', false);
+    return true;
+  } catch (error) {
+    showToast(publishErrorMessage(error), true);
+    return false;
+  } finally {
+    saving = false;
+    setPublishing(false);
+  }
+}
+
+async function salvar() {
+  return publicar(dadosDoFormulario(), 'Salvo e publicado para todos os aparelhos!');
 }
 
 // ---------- Backup ----------
 
 function exportarDados() {
-  var dados = resolveData().data;
+  var dados = lastData || resolveData().data;
   var blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
@@ -319,24 +384,60 @@ function exportarDados() {
 }
 
 async function importarDados(file) {
+  var parsed;
+
   try {
     var text = await file.text();
-    var parsed = JSON.parse(text);
-
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ingressos)) {
-      throw new Error('formato_invalido');
-    }
-
-    saveData({
-      evento: parsed.evento && typeof parsed.evento === 'object' ? parsed.evento : {},
-      ingressos: parsed.ingressos
-    });
-
-    showToast('Backup importado!', false);
-    setTimeout(function () { window.location.reload(); }, 700);
+    parsed = JSON.parse(text);
   } catch (error) {
     showToast('Arquivo inválido. Use um JSON exportado pelo app.', true);
+    return;
   }
+
+  var source = parsed && parsed.data && Array.isArray(parsed.data.ingressos)
+    ? parsed.data
+    : parsed;
+
+  if (!source || typeof source !== 'object' || !Array.isArray(source.ingressos)) {
+    showToast('Arquivo inválido. Use um JSON exportado pelo app.', true);
+    return;
+  }
+
+  var ok = await publicar({
+    evento: source.evento && typeof source.evento === 'object' ? source.evento : {},
+    ingressos: source.ingressos
+  }, 'Backup importado e publicado para todos!');
+
+  if (ok) setTimeout(function () { window.location.reload(); }, 700);
+}
+
+async function publicarBackup(backupData, mensagem) {
+  if (!backupData || !Array.isArray(backupData.ingressos)) {
+    showToast('Nenhum backup disponível ainda.', true);
+    return;
+  }
+
+  var ok = await publicar(backupData, mensagem);
+  if (ok) setTimeout(function () { window.location.reload(); }, 700);
+}
+
+function restaurarBackupLocal() {
+  return publicarBackup(readBackupData(), 'Backup local restaurado e publicado para todos!');
+}
+
+async function restaurarBackupServidor() {
+  var backupData = null;
+
+  try {
+    var response = await fetchSharedBackup();
+    if (response && response.backup && response.backup.data) {
+      backupData = response.backup.data;
+    }
+  } catch (error) {
+    // Sem backup no servidor ou sem conexão.
+  }
+
+  return publicarBackup(backupData, 'Backup do servidor restaurado e publicado para todos!');
 }
 
 // ---------- Sessão ----------
@@ -369,6 +470,12 @@ function setupSession(session) {
 
 // ---------- Init ----------
 
+function showNotice(message) {
+  if (!dataNotice) return;
+  dataNotice.textContent = message || '';
+  dataNotice.hidden = !message;
+}
+
 async function init() {
   var session;
 
@@ -378,8 +485,6 @@ async function init() {
     return; // requireAdminSession já redirecionou
   }
 
-  document.body.classList.remove('auth-pending');
-  document.body.classList.add('auth-ready');
   setupSession(session);
 
   btnAdd.addEventListener('click', function () {
@@ -390,19 +495,15 @@ async function init() {
     salvar();
   });
 
-  btnPreview.addEventListener('click', function () {
-    if (salvar()) window.location.href = 'ingresso.html';
+  btnPreview.addEventListener('click', async function () {
+    if (await salvar()) window.location.href = 'ingresso.html';
   });
 
-  btnReset.addEventListener('click', function () {
-    if (!window.confirm('Restaurar os ingressos de exemplo? O estado atual será guardado no backup.')) return;
-    try {
-      restoreDefaults();
-    } catch (error) {
-      showToast('Não foi possível restaurar agora.', true);
-      return;
-    }
-    window.location.reload();
+  btnReset.addEventListener('click', async function () {
+    if (!window.confirm('Restaurar os ingressos de exemplo para TODOS os aparelhos? O estado atual será guardado no backup.')) return;
+
+    var ok = await publicar(cloneData(DEFAULT_DATA), 'Ingressos de exemplo publicados para todos!');
+    if (ok) setTimeout(function () { window.location.reload(); }, 700);
   });
 
   btnLogout.addEventListener('click', function () {
@@ -414,19 +515,16 @@ async function init() {
   }
 
   if (btnRestoreBackup) {
-    btnRestoreBackup.addEventListener('click', function () {
-      if (!hasBackup()) {
-        showToast('Nenhum backup disponível ainda.', true);
-        return;
-      }
-      if (!window.confirm('Restaurar o último backup? Os dados atuais serão substituídos.')) return;
+    btnRestoreBackup.addEventListener('click', async function () {
+      if (!window.confirm('Restaurar o backup local deste aparelho? Ele será publicado para todos.')) return;
+      await restaurarBackupLocal();
+    });
+  }
 
-      if (restoreBackup()) {
-        showToast('Backup restaurado!', false);
-        setTimeout(function () { window.location.reload(); }, 700);
-      } else {
-        showToast('Não foi possível restaurar o backup.', true);
-      }
+  if (btnRestoreServerBackup) {
+    btnRestoreServerBackup.addEventListener('click', async function () {
+      if (!window.confirm('Restaurar o último backup do servidor? Ele será publicado para todos.')) return;
+      await restaurarBackupServidor();
     });
   }
 
@@ -438,12 +536,13 @@ async function init() {
     });
   }
 
-  var resolved = resolveData();
-  var dados = resolved.data;
+  var loaded = await loadData({ migrateLocal: true });
+  var dados = loaded.data;
+
+  lastVersion = loaded.version || 0;
+  lastData = dados;
 
   preencherFormulario({ ingressos: dados.ingressos });
-
-  if (dataNotice) dataNotice.hidden = !resolved.isFallback;
 
   eventoNome.value = dados.evento.nome || '';
   eventoData.value = dados.evento.data || '';
@@ -465,6 +564,25 @@ async function init() {
   } else {
     setPreview(eventoThumb.value);
   }
+
+  if (loaded.source === 'migrated') {
+    showNotice('Seus ingressos deste aparelho foram publicados e já aparecem em todos os aparelhos.');
+  } else if (loaded.source === 'default') {
+    showNotice('Nenhum ingresso foi publicado ainda. Clique em Salvar para publicar para todos.');
+  } else if (loaded.error) {
+    showNotice('Sem conexão com o servidor. Mostrando a cópia salva neste aparelho; verifique a internet antes de salvar.');
+  } else if (loaded.localBackedUp) {
+    showNotice('Dados compartilhados carregados. A versão anterior deste aparelho foi guardada no backup local.');
+  } else if (loaded.conflict) {
+    showNotice('Outra aba publicou primeiro; os dados mais recentes foram carregados.');
+  } else if (loaded.source === 'cache') {
+    showNotice('Estes ingressos ainda não foram publicados. Clique em Salvar para compartilhar.');
+  } else {
+    showNotice('');
+  }
+
+  document.body.classList.remove('auth-pending');
+  document.body.classList.add('auth-ready');
 
   if (session.role === 'admin') initDevices();
 
