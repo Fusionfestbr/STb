@@ -31,7 +31,7 @@ const ASSETS = [
   './assets/icon-192.png',
   './assets/icon-384.png',
   './assets/icon-512.png',
-  './assets/NO.png',
+  './assets/new.png',
   './assets/quentro.png',
   './assets/stb.png',
   './assets/ticketmaster.png',

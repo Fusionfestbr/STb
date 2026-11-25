@@ -172,7 +172,7 @@ eventoThumb.addEventListener('change', function () {
 });
 
 function selectedThumb() {
-  if (eventoThumb.value === CUSTOM_THUMB_VALUE) return customThumb || 'assets/NO.png';
+  if (eventoThumb.value === CUSTOM_THUMB_VALUE) return customThumb || 'assets/new.png';
   return eventoThumb.value;
 }
 
@@ -558,7 +558,7 @@ async function init() {
       var hasOption = Array.prototype.some.call(eventoThumb.options, function (option) {
         return option.value === dados.evento.thumb;
       });
-      eventoThumb.value = hasOption ? dados.evento.thumb : 'assets/NO.png';
+      eventoThumb.value = hasOption ? dados.evento.thumb : 'assets/new.png';
       setPreview(eventoThumb.value);
     }
   } else {

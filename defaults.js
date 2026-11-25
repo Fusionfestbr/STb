@@ -70,7 +70,7 @@ export const DEFAULT_DATA = {
     data: '25/11/2026',
     horario: '19:30hs',
     local: 'Espaço Unimed',
-    thumb: 'assets/NO.png'
+    thumb: 'assets/new.png'
   },
   ingressos: FIXED_TICKETS
 };
